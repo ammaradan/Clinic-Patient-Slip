@@ -155,65 +155,56 @@
         </div>
       </section>
 
-      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview (Simple Text Receipt) -->
-      <section class="preview-section">
-        <div class="preview-header-bar">
-          <span class="preview-title">80mm Thermal Slip Preview</span>
-          <span class="preview-subtitle">Dr. Akram Clinic</span>
-        </div>
-
-        <!-- The Printable 80mm Slip Container -->
-        <div class="receipt-paper-wrapper">
-          <div id="printableSlip" class="receipt-slip">
-            
-            <!-- Clinic Header (Matching user's printed slip exactly) -->
-            <div class="receipt-header">
-              <div class="receipt-clinic-name">DR AKRAM CLINIC</div>
-              <div class="receipt-clinic-address">Ghalla Mandi, Tandlianwala</div>
-              <div class="receipt-divider-double">================================</div>
-              <div class="receipt-slip-title">PATIENT CONSULTATION SLIP</div>
-              <div class="receipt-divider-single">--------------------------------</div>
-            </div>
-
-            <!-- Patient Details -->
-            <div class="receipt-body">
-              <div id="slipPatientName" class="receipt-patient-name">ADANN</div>
-              
-              <div id="slipParentageRow" class="receipt-patient-field">
-                <span class="field-label">S/W/D:</span> <span id="slipGuardian">Ashraf</span>
-              </div>
-
-              <div id="slipAddressRow" class="receipt-patient-field">
-                <span class="field-label">Address:</span> <span id="slipAddress">Tandla</span>
-              </div>
-
-              <div class="receipt-datetime-row">
-                <span id="slipDate">21-09-2026</span>&nbsp;&nbsp;&nbsp;<span id="slipTime">08:58 PM</span>
-              </div>
-
-              <div class="receipt-divider-single">--------------------------------</div>
-
-              <div class="receipt-consultation-row">
-                <span>Consultation :</span> <span id="slipConsultation">General Checkup</span>
-              </div>
-
-              <div class="receipt-divider-single">--------------------------------</div>
-            </div>
-
-            <!-- Footer -->
-            <div class="receipt-footer">
-              <div class="receipt-footer-shukriya">* Shukriya *</div>
-            </div>
-
-            <!-- Thermal paper cut guide -->
-            <div class="receipt-cut-line">
-              ✂ - - - - - - - - - - - - - - - - - -
-            </div>
-
+      <!-- Hidden Print Container (Kept for printing & DOM references) -->
+      <div id="printContainer" class="print-only">
+        <div id="printableSlip" class="receipt-slip">
+          
+          <!-- Clinic Header (Matching user's printed slip exactly) -->
+          <div class="receipt-header">
+            <div class="receipt-clinic-name">DR AKRAM CLINIC</div>
+            <div class="receipt-clinic-address">Ghalla Mandi, Tandlianwala</div>
+            <div class="receipt-divider-double">================================</div>
+            <div class="receipt-slip-title">PATIENT CONSULTATION SLIP</div>
+            <div class="receipt-divider-single">--------------------------------</div>
           </div>
-        </div>
 
-      </section>
+          <!-- Patient Details -->
+          <div class="receipt-body">
+            <div id="slipPatientName" class="receipt-patient-name">ADANN</div>
+            
+            <div id="slipParentageRow" class="receipt-patient-field">
+              <span class="field-label">S/W/D:</span> <span id="slipGuardian">Ashraf</span>
+            </div>
+
+            <div id="slipAddressRow" class="receipt-patient-field">
+              <span class="field-label">Address:</span> <span id="slipAddress">Tandla</span>
+            </div>
+
+            <div class="receipt-datetime-row">
+              <span id="slipDate">21-09-2026</span>&nbsp;&nbsp;&nbsp;<span id="slipTime">08:58 PM</span>
+            </div>
+
+            <div class="receipt-divider-single">--------------------------------</div>
+
+            <div class="receipt-consultation-row">
+              <span>Consultation :</span> <span id="slipConsultation">General Checkup</span>
+            </div>
+
+            <div class="receipt-divider-single">--------------------------------</div>
+          </div>
+
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <div class="receipt-footer-shukriya">* Shukriya *</div>
+          </div>
+
+          <!-- Thermal paper cut guide -->
+          <div class="receipt-cut-line">
+            ✂ - - - - - - - - - - - - - - - - - -
+          </div>
+
+        </div>
+      </div>
 
     </main>
 

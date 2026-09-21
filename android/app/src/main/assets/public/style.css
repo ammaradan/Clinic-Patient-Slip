@@ -128,18 +128,22 @@ body {
   border: 1px solid #a7f3d0;
 }
 
-/* ---------------- Main Layout ---------------- */
+/* ---------------- Main Layout (Single Column Centered - Preview Removed) ---------------- */
 .main-layout {
-  display: grid;
-  grid-template-columns: 1fr 330px;
-  gap: 18px;
-  align-items: start;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
 }
 
-@media (max-width: 860px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
+.form-section {
+  width: 100%;
+  max-width: 620px;
+}
+
+/* Print-only container hidden on normal screen */
+.print-only {
+  display: none !important;
 }
 
 /* ---------------- LEFT: Patient Form Card ---------------- */
@@ -631,7 +635,7 @@ body {
 
   .app-container,
   .main-layout,
-  .preview-section {
+  .print-only {
     display: block !important;
     width: 80mm !important;
     max-width: 80mm !important;
