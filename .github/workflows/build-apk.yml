@@ -27,26 +27,28 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Dependencies
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Dependencies & Prepare Assets
         run: |
           npm install
           node build.js
 
+      - name: Grant Execute Permission for Gradlew
+        run: |
+          chmod +x android/gradlew || true
+
       - name: Sync Android Project
         run: |
           npx cap sync android
-
-      - name: Grant Execute Permission for Gradlew
-        run: |
-          cd android
-          chmod +x ./gradlew
 
       - name: Build Android APK
         run: |
           cd android
           ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Rename APK
+      - name: Prepare APK Output
         run: |
           mkdir -p output
           cp android/app/build/outputs/apk/debug/app-debug.apk output/Dr-Akram-Clinic.apk
@@ -61,8 +63,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.0
-          name: "Dr. Akram Clinic App v1.0.0 (APK)"
+          tag_name: v1.0.1
+          name: "Dr. Akram Clinic App v1.0.1 (APK)"
           body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer."
           files: output/Dr-Akram-Clinic.apk
         env:
