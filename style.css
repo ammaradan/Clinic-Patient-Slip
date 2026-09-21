@@ -1,0 +1,724 @@
+/* ==========================================================================
+   Dr. Akram Clinic - Patient Consultation Slip Generator
+   Theme: Modern Deep Teal & Concise Thermal Receipt (80mm)
+   ========================================================================== */
+
+:root {
+  --primary-teal-dark: #072a24;
+  --primary-teal: #0b4a41;
+  --primary-teal-light: #0d7c66;
+  --primary-teal-hover: #096352;
+  --accent-purple: #7048e8;
+  
+  --bg-gradient: linear-gradient(135deg, #f0f7f5 0%, #e2eeeb 100%);
+  --surface-white: #ffffff;
+  --border-color: #d1deda;
+  --input-focus-ring: rgba(13, 124, 102, 0.25);
+  
+  --text-dark: #102a24;
+  --text-muted: #52736b;
+  
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  
+  --shadow-sm: 0 2px 8px rgba(7, 42, 36, 0.06);
+  --shadow-md: 0 10px 25px -5px rgba(7, 42, 36, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* App Container */
+.app-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 12px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---------------- Top Status Bar ---------------- */
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-white);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.clinic-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary-teal);
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.bt-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.bt-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bt-status-btn.disconnected {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.bt-status-btn.disconnected:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+}
+
+.bt-status-btn.connected {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+/* ---------------- Main Layout ---------------- */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 330px;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------- LEFT: Patient Form Card ---------------- */
+.patient-card {
+  background: var(--surface-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+/* Gradient Header matching Screenshot 2 */
+.card-header {
+  background: linear-gradient(135deg, #072a24 0%, #0d554a 100%);
+  color: #ffffff;
+  padding: 20px 22px;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.queue-label {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #8be5d4;
+  margin-bottom: 5px;
+}
+
+.header-main-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 3px;
+}
+
+.user-avatar-icon {
+  font-size: 24px;
+  color: #b197fc;
+}
+
+.header-main-title h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0;
+  color: #ffffff;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: #bfe5dd;
+  margin: 0;
+}
+
+/* Form Styles */
+.patient-form {
+  padding: 18px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.urdu-label {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+  font-size: 13px;
+  color: #64748b;
+  direction: rtl;
+}
+
+.required {
+  color: #e11d48;
+  font-weight: bold;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #1e293b;
+  background: #fcfdfd;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: var(--primary-teal-light);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* S/W/D Prefix Input Wrapper */
+.prefix-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  background: #fcfdfd;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.prefix-input-wrapper:focus-within {
+  border-color: var(--primary-teal-light);
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+  background: #ffffff;
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  color: #0f766e;
+  font-family: 'Outfit', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 12px;
+  border-right: 1.5px solid #cbd5e1;
+  user-select: none;
+}
+
+.form-input.prefixed {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.form-input.prefixed:focus {
+  box-shadow: none;
+  border: none;
+}
+
+/* Quick tags */
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tag-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tag-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.tag-btn.active {
+  background: #0d7c66;
+  border-color: #0d7c66;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Actions Group */
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-primary-print {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: var(--primary-teal-light);
+  color: #ffffff;
+  border: none;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(13, 124, 102, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-primary-print:hover {
+  background: var(--primary-teal-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13, 124, 102, 0.45);
+}
+
+.btn-primary-print:active {
+  transform: translateY(0);
+}
+
+.print-icon {
+  font-size: 20px;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-secondary {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ---------------- RIGHT: Thermal Slip Preview (Concise) ---------------- */
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-header-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 2px 6px;
+}
+
+.preview-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary-teal);
+}
+
+.preview-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.receipt-paper-wrapper {
+  background: #4a5752;
+  padding: 12px 10px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+/* The actual 80mm printable slip matching Screenshot 1 */
+.receipt-slip {
+  width: 300px;
+  background: #ffffff;
+  color: #000000;
+  padding: 14px 12px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 12.5px;
+  line-height: 1.35;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Clinic Header */
+.receipt-clinic-header {
+  margin-bottom: 4px;
+}
+
+.clinic-en-name {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+.clinic-ur-name {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 1px 0 2px;
+  color: #000000;
+  direction: rtl;
+}
+
+.clinic-info-line {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111111;
+  line-height: 1.3;
+}
+
+/* Separator lines */
+.receipt-double-line {
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  margin: 4px 0;
+  color: #000000;
+  user-select: none;
+}
+
+.receipt-single-line {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  margin: 4px 0;
+  color: #000000;
+  user-select: none;
+}
+
+/* Slip Type */
+.receipt-slip-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 3px 0 6px;
+  color: #000000;
+}
+
+/* Patient Box matching Screenshot 1 */
+.receipt-patient-box {
+  border: 2px solid #000000;
+  border-radius: 8px;
+  padding: 8px 6px;
+  margin: 4px 0;
+  background: #ffffff;
+}
+
+.box-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.box-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: 0.2px;
+}
+
+.box-patient-name {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #000000;
+  text-transform: uppercase;
+  margin: 3px 0;
+  word-break: break-word;
+}
+
+.box-parentage {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111111;
+  margin-bottom: 2px;
+}
+
+.parentage-tag {
+  font-weight: 800;
+}
+
+.box-address {
+  font-size: 11px;
+  font-weight: 600;
+  color: #222222;
+  margin-bottom: 4px;
+}
+
+.box-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #111111;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 4px;
+  margin-top: 3px;
+}
+
+/* Consultation Row */
+.receipt-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  padding: 0 4px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.meta-key {
+  font-weight: 600;
+  color: #222222;
+}
+
+.meta-value {
+  font-weight: 800;
+  color: #000000;
+}
+
+/* Urdu Notice (Concise) */
+.receipt-notice-urdu {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #000000;
+  direction: rtl;
+  margin: 4px 0;
+}
+
+/* Footer */
+.receipt-footer {
+  font-size: 10.5px;
+  margin: 4px 0 6px;
+}
+
+.footer-thanks {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000000;
+}
+
+.footer-clinic {
+  font-size: 9.5px;
+  color: #333333;
+  margin-top: 1px;
+}
+
+.receipt-cut-line {
+  font-family: monospace;
+  font-size: 10.5px;
+  color: #444444;
+  margin-top: 6px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+  display: block;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #ffffff;
+  padding: 9px 16px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 20px);
+}
+
+/* ==========================================================================
+   PRINT STYLESHEET: Highly Optimized Concise 80mm Thermal Receipt
+   ========================================================================== */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+  }
+
+  .app-header,
+  .form-section,
+  .preview-header-bar,
+  .toast,
+  .receipt-paper-wrapper {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .app-header,
+  .form-section,
+  .preview-header-bar,
+  .toast {
+    display: none !important;
+  }
+
+  .app-container,
+  .main-layout,
+  .preview-section {
+    display: block !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .receipt-slip {
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 1mm 6mm !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .receipt-patient-box {
+    border: 2px solid #000000 !important;
+    background: #ffffff !important;
+  }
+
+  .receipt-cut-line {
+    display: block !important;
+  }
+}

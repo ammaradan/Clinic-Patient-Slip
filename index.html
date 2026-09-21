@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dr. Akram Clinic - Patient Consultation Slip</title>
+  
+  <!-- Google Fonts: Inter & Outfit for modern UI, Noto Nastaliq Urdu for authentic Urdu script -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <meta name="theme-color" content="#072a24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Status & Connectivity Bar -->
+    <header class="app-header">
+      <div class="clinic-badge">
+        <span class="pulse-dot"></span>
+        <span class="clinic-title-top">Dr. Akram Clinic • Tandlianwala</span>
+      </div>
+      
+      <!-- Bluetooth Printer Status Bar -->
+      <div class="bt-toolbar">
+        <button id="btnConnectBt" class="bt-status-btn disconnected" title="Connect 80mm Bluetooth Thermal Printer">
+          <span class="bt-icon">📶</span>
+          <span id="btStatusText">Bluetooth Printer: Disconnected (Tap to Connect)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area: Mobile Form & Live Receipt Preview -->
+    <main class="main-layout">
+      
+      <!-- LEFT/MAIN: Form Card matching Screenshot 2 -->
+      <section class="form-section">
+        <div class="patient-card">
+          
+          <!-- Gradient Card Header matching Screenshot 2 -->
+          <div class="card-header">
+            <span class="queue-label">PATIENT CONSULTATION QUEUE</span>
+            <div class="header-main-title">
+              <span class="user-avatar-icon">👤</span>
+              <h1>Patient Slip</h1>
+            </div>
+            <p class="header-subtitle">Issue consultation slip by patient name</p>
+          </div>
+
+          <!-- Token Slip Generation Form -->
+          <form id="slipForm" class="patient-form" onsubmit="return false;">
+
+            <!-- Field 1: Patient Name (Mandatory) -->
+            <div class="form-group">
+              <label for="patientName" class="form-label">
+                <span>Patient Name</span>
+                <span class="urdu-label">مریض کا نام</span>
+                <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="patientName" 
+                name="patientName"
+                class="form-input" 
+                placeholder="Enter patient name (e.g. AAAA)" 
+                required 
+                autocomplete="off"
+                autofocus
+              >
+            </div>
+
+            <!-- Field 2: Parentage (Mandatory: S/W/D default) -->
+            <div class="form-group">
+              <label for="guardianName" class="form-label">
+                <span>Parentage (S/W/D)</span>
+                <span class="urdu-label">ولدیت / نسبت (S/W/D)</span>
+                <span class="required">*</span>
+              </label>
+              <div class="prefix-input-wrapper">
+                <span class="input-prefix">S/W/D:</span>
+                <input 
+                  type="text" 
+                  id="guardianName" 
+                  name="guardianName"
+                  class="form-input prefixed" 
+                  placeholder="Father / Husband Name" 
+                  required 
+                  autocomplete="off"
+                >
+              </div>
+            </div>
+
+            <!-- Field 3: Address (Mandatory) -->
+            <div class="form-group">
+              <label for="patientAddress" class="form-label">
+                <span>Address</span>
+                <span class="urdu-label">پتہ / رہائش</span>
+                <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="patientAddress" 
+                name="patientAddress"
+                class="form-input" 
+                placeholder="e.g. Ghalla Mandi, Tandlianwala" 
+                required 
+                autocomplete="off"
+              >
+            </div>
+
+            <!-- Field 4: Reason / Department -->
+            <div class="form-group">
+              <label for="consultationReason" class="form-label">
+                <span>Reason / Department</span>
+                <span class="urdu-label">معائنہ کی وجہ</span>
+              </label>
+              <input 
+                type="text" 
+                id="consultationReason" 
+                name="consultationReason"
+                class="form-input" 
+                placeholder="e.g. General Checkup, Fever, BP..." 
+                value="General Checkup"
+                autocomplete="off"
+              >
+              <!-- Quick Select Badges -->
+              <div class="quick-tags">
+                <button type="button" class="tag-btn active" data-val="General Checkup">General Checkup</button>
+                <button type="button" class="tag-btn" data-val="Fever / Flu">Fever / Flu</button>
+                <button type="button" class="tag-btn" data-val="High BP">High BP</button>
+                <button type="button" class="tag-btn" data-val="Sugar">Sugar</button>
+                <button type="button" class="tag-btn" data-val="Emergency">Emergency</button>
+              </div>
+            </div>
+
+            <!-- Print Action Buttons matching Screenshot 2 -->
+            <div class="actions-group">
+              <button type="button" id="btnPrintSlip" class="btn-primary-print">
+                <span class="print-icon">🖨️</span>
+                <span class="btn-title">Issue & Print Slip (پرنٹ پرچی)</span>
+              </button>
+
+              <div class="secondary-actions">
+                <button type="button" id="btnReprintLast" class="btn-secondary" title="Reprint Last Slip">
+                  🔄 Reprint Last
+                </button>
+                <button type="button" id="btnClearForm" class="btn-secondary" title="Clear Fields">
+                  🧹 Clear
+                </button>
+              </div>
+            </div>
+
+          </form>
+
+        </div>
+      </section>
+
+      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview matching Screenshot 1 (Compact & Urdu Only) -->
+      <section class="preview-section">
+        <div class="preview-header-bar">
+          <span class="preview-title">80mm Thermal Slip Preview</span>
+          <span class="preview-subtitle">Concise Format</span>
+        </div>
+
+        <!-- The Printable 80mm Slip Container -->
+        <div class="receipt-paper-wrapper">
+          <div id="printableSlip" class="receipt-slip">
+            
+            <!-- Clinic Header -->
+            <div class="receipt-clinic-header">
+              <div class="clinic-en-name">DR AKRAM CLINIC</div>
+              <div class="clinic-ur-name">ڈاکٹر اکرم کلینک</div>
+              <div class="clinic-info-line">📍 Ghalla Mandi, Tandlianwala</div>
+            </div>
+
+            <!-- Divider line -->
+            <div class="receipt-double-line">================================</div>
+
+            <!-- Slip Type Title -->
+            <div class="receipt-slip-title">
+              PATIENT CONSULTATION SLIP / مریض پرچی
+            </div>
+
+            <!-- High-Contrast Patient Box matching Screenshot 1 -->
+            <div class="receipt-patient-box">
+              <div class="box-label-row">
+                <span class="box-label">PATIENT NAME / مریض کا نام</span>
+              </div>
+
+              <!-- Big Bold Patient Name -->
+              <div id="slipPatientName" class="box-patient-name">AAAA</div>
+              
+              <!-- Parentage line: S/W/D default -->
+              <div id="slipParentageRow" class="box-parentage">
+                <span class="parentage-tag">S/W/D:</span> <span id="slipGuardian">Muhammad Ali</span>
+              </div>
+
+              <!-- Address line -->
+              <div id="slipAddressRow" class="box-address">
+                <span>📍</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
+              </div>
+
+              <!-- Date and Live Time -->
+              <div class="box-meta-row">
+                <span id="slipDate">📅 2026-09-21</span>
+                <span>•</span>
+                <span id="slipTime">🕒 05:30 PM</span>
+              </div>
+            </div>
+
+            <!-- Single dashed line -->
+            <div class="receipt-single-line">--------------------------------</div>
+
+            <!-- Consultation details -->
+            <div class="receipt-meta-grid">
+              <div class="meta-row">
+                <span class="meta-key">Consultation:</span>
+                <span id="slipConsultation" class="meta-value">General Checkup</span>
+              </div>
+            </div>
+
+            <!-- Single dashed line -->
+            <div class="receipt-single-line">--------------------------------</div>
+
+            <!-- Urdu Notice: ویٹنگ ایریا اور نمبر پکارا جائے گا -->
+            <div class="receipt-notice-urdu">
+              برائے مہربانی ویٹنگ ایریا میں تشریف رکھیں، آپ کا نمبر پکارا جائے گا۔
+            </div>
+
+            <!-- Divider line -->
+            <div class="receipt-double-line">================================</div>
+
+            <!-- Footer: صرف شکریہ -->
+            <div class="receipt-footer">
+              <div class="footer-thanks">* شکریہ *</div>
+            </div>
+
+            <!-- Thermal paper cut guide (Single line, strictly non-wrapping) -->
+            <div class="receipt-cut-line">
+              ✂ - - - - - - - - - - - - - - - - - -
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="escpos.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
