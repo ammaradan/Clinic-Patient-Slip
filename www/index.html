@@ -114,26 +114,25 @@
               >
             </div>
 
-            <!-- Field 4: Reason / Department (Only 3 options requested) -->
+            <!-- Field 4: Reason / Department (Strictly General Checkup and Urgent) -->
             <div class="form-group">
               <label for="consultationReason" class="form-label">
                 <span>Reason / Department</span>
-                <span class="urdu-label">معائنہ کی وجہ / شعبہ</span>
+                <span class="urdu-label">معائنہ کی قسم / شعبہ</span>
               </label>
               <input 
                 type="text" 
                 id="consultationReason" 
                 name="consultationReason"
                 class="form-input" 
-                placeholder="Select or enter reason" 
+                placeholder="General Checkup or Urgent" 
                 value="General Checkup"
                 autocomplete="off"
               >
-              <!-- Quick Select Badges (Strictly only 3 requested: General Checkup, Emergency, US) -->
+              <!-- Quick Select Badges (Strictly General Checkup & Urgent) -->
               <div class="quick-tags">
                 <button type="button" class="tag-btn active" data-val="General Checkup">🩺 General Checkup</button>
-                <button type="button" class="tag-btn" data-val="Emergency">🚨 Emergency</button>
-                <button type="button" class="tag-btn" data-val="US (Ultrasound)">🔬 US (Ultrasound)</button>
+                <button type="button" class="tag-btn" data-val="Urgent">⚡ Urgent</button>
               </div>
             </div>
 
@@ -156,7 +155,7 @@
         </div>
       </section>
 
-      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview (Urdu & English) -->
+      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview (Simple Text Receipt) -->
       <section class="preview-section">
         <div class="preview-header-bar">
           <span class="preview-title">80mm Thermal Slip Preview</span>
@@ -167,54 +166,46 @@
         <div class="receipt-paper-wrapper">
           <div id="printableSlip" class="receipt-slip">
             
-            <!-- Exact Graphic Header Banner matching User's Image -->
-            <div class="receipt-header-img-wrap">
-              <img src="header.png" alt="Dr. Akram Clinic Header" class="slip-banner-img">
+            <!-- Clinic Header (Matching user's printed slip exactly) -->
+            <div class="receipt-header">
+              <div class="receipt-clinic-name">DR AKRAM CLINIC</div>
+              <div class="receipt-clinic-address">Ghalla Mandi, Tandlianwala</div>
+              <div class="receipt-divider-double">================================</div>
+              <div class="receipt-slip-title">PATIENT CONSULTATION SLIP</div>
+              <div class="receipt-divider-single">--------------------------------</div>
             </div>
 
-            <div class="receipt-body-content">
-              <!-- High-Contrast Patient Box (Middle Section) -->
-              <div class="receipt-patient-box">
-                <div class="box-label-row">
-                  <span class="box-label">PATIENT NAME</span>
-                </div>
-
-                <!-- Big Bold Patient Name -->
-                <div id="slipPatientName" class="box-patient-name">AAAA</div>
-                
-                <!-- Parentage line: S/W/D default -->
-                <div id="slipParentageRow" class="box-parentage">
-                  <span class="parentage-tag">S/W/D:</span> <span id="slipGuardian">Muhammad Ali</span>
-                </div>
-
-                <!-- Address line -->
-                <div id="slipAddressRow" class="box-address">
-                  <span class="address-tag">Address:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
-                </div>
-
-                <!-- Date and Live Time -->
-                <div class="box-meta-row">
-                  <span id="slipDate">2026-09-21</span>
-                  <span>•</span>
-                  <span id="slipTime">08:10 PM</span>
-                </div>
+            <!-- Patient Details -->
+            <div class="receipt-body">
+              <div id="slipPatientName" class="receipt-patient-name">ADANN</div>
+              
+              <div id="slipParentageRow" class="receipt-patient-field">
+                <span class="field-label">S/W/D:</span> <span id="slipGuardian">Ashraf</span>
               </div>
 
-              <!-- Consultation details -->
-              <div class="receipt-meta-grid">
-                <div class="meta-row">
-                  <span class="meta-key">Department:</span>
-                  <span id="slipConsultation" class="meta-value">General Checkup</span>
-                </div>
+              <div id="slipAddressRow" class="receipt-patient-field">
+                <span class="field-label">Address:</span> <span id="slipAddress">Tandla</span>
               </div>
+
+              <div class="receipt-datetime-row">
+                <span id="slipDate">2026-09-21</span>&nbsp;&nbsp;&nbsp;<span id="slipTime">08:58 PM</span>
+              </div>
+
+              <div class="receipt-divider-single">--------------------------------</div>
+
+              <div class="receipt-consultation-row">
+                <span>Consultation :</span> <span id="slipConsultation">General Checkup</span>
+              </div>
+
+              <div class="receipt-divider-single">--------------------------------</div>
             </div>
 
-            <!-- Exact Graphic Footer Banner matching User's Image -->
-            <div class="receipt-footer-img-wrap">
-              <img src="footer.png" alt="Dr. Akram Clinic Notice & Footer" class="slip-banner-img">
+            <!-- Footer -->
+            <div class="receipt-footer">
+              <div class="receipt-footer-shukriya">* Shukriya *</div>
             </div>
 
-            <!-- Thermal paper cut guide (Single line, strictly non-wrapping) -->
+            <!-- Thermal paper cut guide -->
             <div class="receipt-cut-line">
               ✂ - - - - - - - - - - - - - - - - - -
             </div>

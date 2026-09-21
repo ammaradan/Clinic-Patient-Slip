@@ -254,23 +254,29 @@ class BluetoothPrinter {
     // Initialize printer: ESC @
     bytes.push(0x1B, 0x40);
 
-    // Set tight line spacing: ESC 3 22 (22 dots line spacing instead of loose 36)
-    bytes.push(0x1B, 0x33, 0x16);
-
-    // 1. Send Pre-baked Header Raster (Exact Authentic Graphic Banner)
-    if (window.PREBAKED_HEADER_BASE64) {
-      const headerBytes = this.base64ToUint8(window.PREBAKED_HEADER_BASE64);
-      for (let i = 0; i < headerBytes.length; i++) bytes.push(headerBytes[i]);
-    }
-
-    // 2. Middle Dynamic Patient Details (Fast ESC/POS Hardware Text Mode)
-    // Centered alignment: ESC a 1
+    // Center alignment: ESC a 1
     bytes.push(0x1B, 0x61, 0x01);
 
-    // Large Bold Patient Name: GS ! 0x11 (Double Width & Height), ESC E 1 (Bold)
+    // 1. DR AKRAM CLINIC (Double width & height + Bold)
+    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, "DR AKRAM CLINIC\n");
+
+    // Normal size & bold off
+    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
+    // Address (Ghalla Mandi, Tandlianwala - "Dr. Akram Clinic Tandlianwala" removed per user highlight)
+    this.appendAscii(bytes, "Ghalla Mandi, Tandlianwala\n");
+    this.appendAscii(bytes, "================================\n");
+
+    // Title: Bold on
+    bytes.push(0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, "PATIENT CONSULTATION SLIP\n");
+    bytes.push(0x1B, 0x45, 0x00);
+    this.appendAscii(bytes, "--------------------------------\n");
+
+    // 2. Large Bold Patient Name
     bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
     this.appendAscii(bytes, `${patientData.name.toUpperCase()}\n`);
-    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00); // Reset size and bold
+    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
 
     // Parentage
     if (patientData.guardian) {
@@ -283,21 +289,21 @@ class BluetoothPrinter {
     }
 
     // Date & Time
-    this.appendAscii(bytes, `${patientData.date}  ${patientData.time}\n`);
+    this.appendAscii(bytes, `${patientData.date}   ${patientData.time}\n`);
 
-    // Department / Reason (Bold)
-    bytes.push(0x1B, 0x45, 0x01);
-    this.appendAscii(bytes, `Department: ${patientData.reason}\n`);
-    bytes.push(0x1B, 0x45, 0x00);
+    // Divider line
+    this.appendAscii(bytes, "--------------------------------\n");
 
-    // 3. Send Pre-baked Footer Raster (Exact Authentic Notice & * شکریہ * Banner)
-    // (Note: Footer image already has `--------------------------------` at its top!)
-    if (window.PREBAKED_FOOTER_BASE64) {
-      const footerBytes = this.base64ToUint8(window.PREBAKED_FOOTER_BASE64);
-      for (let i = 0; i < footerBytes.length; i++) bytes.push(footerBytes[i]);
-    }
+    // Consultation Line
+    this.appendAscii(bytes, `Consultation : ${patientData.reason}\n`);
 
-    // 4. Feed & Cut (Feed ONLY 2 lines instead of 4, saving ~2 inches of paper per slip!)
+    // Divider line
+    this.appendAscii(bytes, "--------------------------------\n");
+
+    // Shukriya
+    this.appendAscii(bytes, "* Shukriya *\n");
+
+    // 3. Feed & Cut (Only 2 lines feed for zero paper waste)
     bytes.push(0x1B, 0x64, 0x02);
     // Partial cut: GS V 66 0
     bytes.push(0x1D, 0x56, 0x42, 0x00);

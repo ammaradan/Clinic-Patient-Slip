@@ -430,174 +430,130 @@ body {
   overflow: hidden;
 }
 
-/* The actual 80mm printable slip */
+/* The actual 80mm printable slip (Simple Clean Thermal Receipt) */
 .receipt-slip {
   width: 100%;
-  max-width: 310px;
+  max-width: 320px;
   background: #ffffff;
   color: #000000;
-  padding: 0;
+  padding: 18px 14px 12px;
   margin: 0 auto;
-  border-radius: 6px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   box-sizing: border-box;
   text-align: center;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  letter-spacing: 0.3px;
+  line-height: 1.35;
 }
 
-/* Banner Graphics: Edge-to-edge with zero gaps or distortion */
-.receipt-header-img-wrap {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-  background: #ffffff;
+.receipt-header {
+  margin-bottom: 4px;
 }
 
-.receipt-footer-img-wrap {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-  background: #ffffff;
-}
-
-.slip-banner-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-
-.receipt-body-content {
-  padding: 6px 10px 4px;
-}
-
-/* Patient Box matching Screenshot 1 */
-.receipt-patient-box {
-  border: 2px solid #000000;
-  border-radius: 6px;
-  padding: 6px 8px;
-  margin: 2px 0 4px;
-  background: #ffffff;
-}
-
-.box-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2px;
-}
-
-.box-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #000000;
-  letter-spacing: 0.5px;
-}
-
-.box-patient-name {
-  font-size: 24px;
+.receipt-clinic-name {
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: 1px;
   color: #000000;
   text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.receipt-clinic-address {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111111;
+  margin-bottom: 4px;
+}
+
+.receipt-divider-double {
+  font-family: monospace;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #000000;
+  margin: 3px 0;
+  user-select: none;
+}
+
+.receipt-slip-title {
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #000000;
+  text-transform: uppercase;
+  margin: 3px 0;
+}
+
+.receipt-divider-single {
+  font-family: monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #000000;
+  margin: 3px 0;
+  user-select: none;
+}
+
+.receipt-body {
   margin: 2px 0;
+}
+
+.receipt-patient-name {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #000000;
+  text-transform: uppercase;
+  margin: 4px 0 2px;
   word-break: break-word;
   line-height: 1.2;
 }
 
-.box-parentage {
-  font-size: 12px;
-  font-weight: 700;
-  color: #000000;
-  margin-bottom: 2px;
-}
-
-.box-address {
-  font-size: 11px;
+.receipt-patient-field {
+  font-size: 13.5px;
   font-weight: 600;
-  color: #111111;
-  margin-bottom: 2px;
-}
-
-.box-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #111111;
-  border-top: 1px dashed #cccccc;
-  padding-top: 3px;
-  margin-top: 3px;
-}
-
-/* Consultation Row */
-.receipt-meta-grid {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 6px 2px;
-}
-
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 12px;
-}
-
-.meta-key {
-  font-weight: 700;
-  color: #222222;
-}
-
-.meta-value {
-  font-weight: 900;
   color: #000000;
+  margin: 2px 0;
 }
 
-/* Urdu Notice (Concise) */
-.receipt-notice-urdu {
-  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
-  font-size: 12.5px;
+.receipt-patient-field .field-label {
   font-weight: 700;
-  line-height: 1.6;
-  color: #000000;
-  direction: rtl;
-  margin: 4px 0;
 }
 
-/* Footer */
-.receipt-footer {
-  font-size: 10.5px;
-  margin: 4px 0 6px;
-}
-
-.footer-thanks {
-  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+.receipt-datetime-row {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: #000000;
+  margin: 4px 0 2px;
 }
 
-.footer-clinic {
-  font-size: 9.5px;
-  color: #333333;
-  margin-top: 1px;
+.receipt-consultation-row {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #000000;
+  margin: 3px 0;
+}
+
+.receipt-footer {
+  margin-top: 2px;
+}
+
+.receipt-footer-shukriya {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #000000;
+  margin: 4px 0 2px;
 }
 
 .receipt-cut-line {
   font-family: monospace;
-  font-size: 10.5px;
-  color: #444444;
-  margin-top: 6px;
+  font-size: 11px;
+  color: #888888;
+  margin-top: 10px;
   letter-spacing: 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -679,14 +635,10 @@ body {
     width: 76mm !important;
     max-width: 76mm !important;
     margin: 0 auto !important;
-    padding: 2mm 1mm 6mm !important;
+    padding: 2mm 1mm 4mm !important;
     box-shadow: none !important;
     border: none !important;
-  }
-
-  .receipt-patient-box {
-    border: 2px solid #000000 !important;
-    background: #ffffff !important;
+    font-family: 'Consolas', 'Courier New', Courier, monospace !important;
   }
 
   .receipt-cut-line {

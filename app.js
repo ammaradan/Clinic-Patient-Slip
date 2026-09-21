@@ -49,13 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Live Preview Synchronization ---
   function syncLivePreview() {
     const nameVal = patientNameInput.value.trim();
-    slipPatientName.textContent = nameVal ? nameVal.toUpperCase() : 'AAAA';
+    slipPatientName.textContent = nameVal ? nameVal.toUpperCase() : 'ADANN';
 
     const guardianVal = guardianNameInput.value.trim();
-    slipGuardian.textContent = guardianVal || 'Muhammad Ali';
+    slipGuardian.textContent = guardianVal || 'Ashraf';
 
     const addrVal = patientAddressInput.value.trim();
-    slipAddress.textContent = addrVal || 'Ghalla Mandi, Tandlianwala';
+    slipAddress.textContent = addrVal || 'Tandla';
 
     const reasonVal = consultationReasonInput.value.trim();
     slipConsultation.textContent = reasonVal || 'General Checkup';
