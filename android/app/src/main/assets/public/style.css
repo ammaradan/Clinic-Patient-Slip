@@ -501,15 +501,22 @@ body {
   margin: 2px 0;
 }
 
+#patientName {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
 .receipt-patient-name {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   color: #000000;
   text-transform: uppercase;
-  margin: 4px 0 2px;
+  margin: 5px 0 3px;
   word-break: break-word;
   line-height: 1.2;
+  -webkit-text-stroke: 0.6px #000000;
 }
 
 .receipt-patient-field {

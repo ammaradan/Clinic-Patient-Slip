@@ -273,10 +273,11 @@ class BluetoothPrinter {
     bytes.push(0x1B, 0x45, 0x00);
     this.appendAscii(bytes, "--------------------------------\n");
 
-    // 2. Large Bold Patient Name
-    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
-    this.appendAscii(bytes, `${patientData.name.toUpperCase()}\n`);
-    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
+    // 2. Large Bold Capital Patient Name
+    // Double width & height (GS ! 0x11) + Bold (ESC E 1) + Double strike (ESC G 1)
+    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01, 0x1B, 0x47, 0x01);
+    this.appendAscii(bytes, `${(patientData.name || '').toUpperCase()}\n`);
+    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x47, 0x00);
 
     // Parentage
     if (patientData.guardian) {

@@ -48,8 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Live Preview Synchronization ---
   function syncLivePreview() {
-    const nameVal = patientNameInput.value.trim();
-    slipPatientName.textContent = nameVal ? nameVal.toUpperCase() : 'ADANN';
+    const nameVal = patientNameInput.value.trim().toUpperCase();
+    slipPatientName.textContent = nameVal || 'ADANN';
 
     const guardianVal = guardianNameInput.value.trim();
     slipGuardian.textContent = guardianVal || 'Ashraf';
@@ -83,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Form Input Listeners ---
+  patientNameInput.addEventListener('input', () => {
+    const start = patientNameInput.selectionStart;
+    const end = patientNameInput.selectionEnd;
+    patientNameInput.value = patientNameInput.value.toUpperCase();
+    if (start !== null && end !== null) {
+      patientNameInput.setSelectionRange(start, end);
+    }
+  });
+
   [patientNameInput, guardianNameInput, patientAddressInput, consultationReasonInput].forEach(inp => {
     inp.addEventListener('input', syncLivePreview);
   });
@@ -220,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Issue & Print Action ---
   async function handlePrint(isReprint = false) {
-    let name = patientNameInput.value.trim();
+    let name = patientNameInput.value.trim().toUpperCase();
     let guardian = guardianNameInput.value.trim();
     let address = patientAddressInput.value.trim();
     const reason = consultationReasonInput.value.trim() || 'General Checkup';
