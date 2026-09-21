@@ -292,14 +292,16 @@
 
   </div>
 
-  <!-- Scripts -->
-  <script src="html2canvas.min.js"></script>
-  <script src="escpos.js"></script>
-  <script src="app.js"></script>
+  <!-- Scripts with cache busting query string -->
+  <script src="html2canvas.min.js?v=1.1.5"></script>
+  <script src="escpos.js?v=1.1.5"></script>
+  <script src="app.js?v=1.1.5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+        navigator.serviceWorker.register('./sw.js?v=1.1.5').then(reg => {
+          reg.update();
+        }).catch(err => console.log('SW error:', err));
       });
     }
   </script>

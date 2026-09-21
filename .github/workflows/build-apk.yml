@@ -77,9 +77,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.1.4
-          name: "Dr. Akram Clinic App v1.1.4 (APK)"
-          body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip with Native Bluetooth SPP & 80mm Thermal Printer Support (100% Offline)."
+          tag_name: v1.1.5
+          name: "Dr. Akram Clinic App v1.1.5 (APK)"
+          body: "Official Android APK v1.1.5 for Dr. Akram Clinic Patient Consultation Slip with Native Bluetooth SPP & 80mm Thermal Printer Support (100% Offline)."
           files: output/Dr-Akram-Clinic.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

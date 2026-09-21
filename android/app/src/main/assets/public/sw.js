@@ -1,7 +1,7 @@
 /**
- * Service Worker for 100% Offline Support
+ * Service Worker for 100% Offline Support (Network-First strategy)
  */
-const CACHE_NAME = 'akram-clinic-slip-v1';
+const CACHE_NAME = 'akram-clinic-slip-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -35,8 +35,18 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request).catch(() => caches.match('./index.html'));
-    })
+    fetch(e.request)
+      .then((networkRes) => {
+        if (networkRes && networkRes.status === 200) {
+          const resClone = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
+        }
+        return networkRes;
+      })
+      .catch(() => {
+        return caches.match(e.request).then((cachedRes) => {
+          return cachedRes || caches.match('./index.html');
+        });
+      })
   );
 });
