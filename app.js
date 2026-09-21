@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hours = hours ? hours : 12;
     const formattedHours = String(hours).padStart(2, '0');
 
-    slipDate.textContent = `${yyyy}-${mm}-${dd}`;
+    slipDate.textContent = `${dd}-${mm}-${yyyy}`;
     slipTime.textContent = `${formattedHours}:${minutes} ${ampm}`;
   }
 
