@@ -16,7 +16,7 @@ A mobile-first, offline-capable consultation slip generator built for 80mm therm
 
 ## ⬇️ Download Android App (100% Offline)
 Direct download link for Android phones (no internet required to use):
-👉 **[Download Dr-Akram-Clinic.apk (v1.1.2)](https://github.com/ammaradan/Clinic-Patient-Slip/releases/download/v1.1.2/Dr-Akram-Clinic.apk)**
+👉 **[Download Dr-Akram-Clinic.apk (v1.1.3)](https://github.com/ammaradan/Clinic-Patient-Slip/releases/download/v1.1.3/Dr-Akram-Clinic.apk)**
 
 ## 🌐 Alternative: Install as PWA (Chrome)
 2. Tap the Chrome menu (`⋮`) and select **"Add to Home screen"** or **"Install App"**.

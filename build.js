@@ -15,6 +15,7 @@ const files = [
   'style.css',
   'app.js',
   'escpos.js',
+  'html2canvas.min.js',
   'manifest.json',
   'icon.svg',
   'sw.js'

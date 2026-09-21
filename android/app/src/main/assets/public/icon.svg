@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#072a24"/>
+      <stop offset="100%" stop-color="#0d7c66"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <!-- Thermal Receipt Paper Icon -->
+  <rect x="136" y="96" width="240" height="320" rx="16" fill="#ffffff"/>
+  <!-- Paper header cut effect -->
+  <path d="M 136 96 L 160 112 L 184 96 L 208 112 L 232 96 L 256 112 L 280 96 L 304 112 L 328 96 L 352 112 L 376 96 L 376 400 rx 16 L 136 400 Z" fill="#ffffff"/>
+  <!-- Clinic Cross / Medical Badge -->
+  <circle cx="256" cy="180" r="40" fill="#0d7c66"/>
+  <rect x="246" y="156" width="20" height="48" rx="4" fill="#ffffff"/>
+  <rect x="232" y="170" width="48" height="20" rx="4" fill="#ffffff"/>
+  <!-- Receipt text lines -->
+  <rect x="176" y="246" width="160" height="16" rx="4" fill="#1e293b"/>
+  <rect x="176" y="278" width="120" height="12" rx="3" fill="#64748b"/>
+  <rect x="176" y="302" width="140" height="12" rx="3" fill="#64748b"/>
+  <!-- Printer icon at bottom -->
+  <rect x="176" y="340" width="160" height="8" rx="2" fill="#0d7c66"/>
+</svg>
