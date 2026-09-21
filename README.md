@@ -14,7 +14,10 @@ A mobile-first, offline-capable consultation slip generator built for 80mm therm
 1. **Bluetooth**: Click **"Bluetooth Printer (Tap to Connect)"** at the top bar and select your 80mm Bluetooth printer.
 2. **System Print**: Click **"Issue & Print Slip (پرنٹ پرچی)"** to print directly via Android Print Service, RawBT, or USB/network printer.
 
-## 🌐 Android APK / App Installation
-1. Open the hosted URL in Google Chrome on your Android phone.
+## ⬇️ Download Android App (100% Offline)
+Direct download link for Android phones (no internet required to use):
+👉 **[Download Dr-Akram-Clinic.apk (v1.1.2)](https://github.com/ammaradan/Clinic-Patient-Slip/releases/download/v1.1.2/Dr-Akram-Clinic.apk)**
+
+## 🌐 Alternative: Install as PWA (Chrome)
 2. Tap the Chrome menu (`⋮`) and select **"Add to Home screen"** or **"Install App"**.
 3. It installs as a full-screen standalone application with the clinic icon on your phone and works 100% offline.
