@@ -44,23 +44,18 @@ jobs:
       - name: Build Android APK with Gradle
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle_output.txt
-
-      - name: Push Error Log to Git Branch on Failure
-        if: failure()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B debug-log
-          git add gradle_output.txt
-          git commit -m "Gradle Error Log"
-          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git debug-log
+          ./gradlew assembleDebug --no-daemon
 
       - name: Prepare APK Output
         run: |
           mkdir -p output
-          find android/app/build/outputs -name "*.apk" -exec cp {} output/Dr-Akram-Clinic.apk \;
-          ls -la output/
+          APK_FILE=$(find android -name "*debug*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            APK_FILE=$(find android -name "*.apk" | head -n 1)
+          fi
+          echo "Found APK at: $APK_FILE"
+          cp "$APK_FILE" output/Dr-Akram-Clinic.apk
+          ls -lh output/Dr-Akram-Clinic.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -72,8 +67,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.6
-          name: "Dr. Akram Clinic App v1.0.6 (APK)"
+          tag_name: v1.0.7
+          name: "Dr. Akram Clinic App v1.0.7 (APK)"
           body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer."
           files: output/Dr-Akram-Clinic.apk
         env:
