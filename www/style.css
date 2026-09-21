@@ -453,12 +453,13 @@ body {
 }
 
 .receipt-clinic-name {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   color: #000000;
   text-transform: uppercase;
   margin-bottom: 2px;
+  -webkit-text-stroke: 0.5px #000000;
 }
 
 .receipt-clinic-address {

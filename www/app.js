@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hours = hours ? hours : 12;
     const formattedHours = String(hours).padStart(2, '0');
 
-    slipDate.textContent = `📅 ${yyyy}-${mm}-${dd}`;
-    slipTime.textContent = `🕒 ${formattedHours}:${minutes} ${ampm}`;
+    slipDate.textContent = `${yyyy}-${mm}-${dd}`;
+    slipTime.textContent = `${formattedHours}:${minutes} ${ampm}`;
   }
 
   // --- Live Preview Synchronization ---
@@ -276,8 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let printedViaBluetooth = false;
     if (btPrinter.isConnected) {
       showToast('Bluetooth پرنٹر پر تیز پرنٹ بھیجا جا رہا ہے...');
-      const dateStr = slipDate.textContent.replace('📅', '').trim();
-      const timeStr = slipTime.textContent.replace('🕒', '').trim();
+      const dateStr = slipDate.textContent.replace(/[📅🕒]/g, '').trim();
+      const timeStr = slipTime.textContent.replace(/[📅🕒]/g, '').trim();
       const patientData = {
         name,
         guardian,

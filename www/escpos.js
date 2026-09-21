@@ -257,12 +257,12 @@ class BluetoothPrinter {
     // Center alignment: ESC a 1
     bytes.push(0x1B, 0x61, 0x01);
 
-    // 1. DR AKRAM CLINIC (Double width & height + Bold)
-    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
+    // 1. DR AKRAM CLINIC (Double width & height + Emphasized Bold + Double Strike)
+    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01, 0x1B, 0x47, 0x01);
     this.appendAscii(bytes, "DR AKRAM CLINIC\n");
 
-    // Normal size & bold off
-    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
+    // Normal size, bold off, double strike off
+    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x47, 0x00);
     // Address (Ghalla Mandi, Tandlianwala - "Dr. Akram Clinic Tandlianwala" removed per user highlight)
     this.appendAscii(bytes, "Ghalla Mandi, Tandlianwala\n");
     this.appendAscii(bytes, "================================\n");
