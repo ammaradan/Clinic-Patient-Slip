@@ -36,9 +36,9 @@ jobs:
         run: |
           chmod +x android/gradlew || true
 
-      - name: Sync Android Project
+      - name: Copy Web Assets to Native Project
         run: |
-          npx cap sync android
+          npx cap copy android
 
       - name: Build Android APK
         run: |
