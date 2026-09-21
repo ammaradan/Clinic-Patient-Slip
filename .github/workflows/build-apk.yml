@@ -39,27 +39,34 @@ jobs:
 
       - name: Build Android APK with Gradle
         run: |
+          set -o pipefail
           cd android
-          ./gradlew assembleDebug --no-daemon 2>&1 | tee ../gradle_output.txt
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle_output.txt
 
       - name: Post Error to GitHub Issue on Failure
         if: failure()
         run: |
-          gh issue create --title "CI Build Failure Log" --body "```
-          $(tail -n 80 gradle_output.txt)
-          ```"
+          echo "=== GRADLE ERROR ==="
+          tail -n 80 gradle_output.txt
+          gh issue create --title "Gradle Build Error" --body "```
+          $(tail -n 60 gradle_output.txt)
+          ```" || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare APK Output
         run: |
           mkdir -p output
-          APK_FILE=$(find android -name "*debug*.apk" | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            APK_FILE=$(find android -name "*.apk" | head -n 1)
+          echo "Searching for APKs..."
+          find . -name "*.apk"
+          APK_FILE=$(find . -name "*.apk" | head -n 1)
+          if [ -n "$APK_FILE" ]; then
+            echo "Copying $APK_FILE to output/Dr-Akram-Clinic.apk"
+            cp "$APK_FILE" output/Dr-Akram-Clinic.apk
+          else
+            echo "No APK found."
+            exit 1
           fi
-          echo "Found APK at: $APK_FILE"
-          cp "$APK_FILE" output/Dr-Akram-Clinic.apk
           ls -lh output/Dr-Akram-Clinic.apk
 
       - name: Upload APK Artifact
@@ -72,9 +79,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.9
-          name: "Dr. Akram Clinic App v1.0.9 (APK)"
-          body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer."
+          tag_name: v1.1.0
+          name: "Dr. Akram Clinic App v1.1.0 (APK)"
+          body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer (100% Offline)."
           files: output/Dr-Akram-Clinic.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
