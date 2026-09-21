@@ -442,43 +442,21 @@ body {
   text-align: center;
 }
 
-/* Clinic Header */
-.receipt-clinic-header {
-  margin-bottom: 5px;
+/* Banner Graphics */
+.receipt-header-img-wrap {
+  margin: -4px -4px 6px -4px;
 }
 
-.clinic-en-name {
-  font-size: 19px;
-  font-weight: 900;
-  letter-spacing: 0.8px;
-  color: #000000;
-  text-transform: uppercase;
+.receipt-footer-img-wrap {
+  margin: 6px -4px 2px -4px;
 }
 
-.clinic-ur-name {
-  font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', 'Segoe UI', Tahoma, serif;
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1.5;
-  margin: 1px 0 2px;
-  color: #000000;
-  direction: rtl;
-}
-
-.clinic-sub-en {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #000000;
-  line-height: 1.3;
-}
-
-.clinic-sub-ur {
-  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #000000;
-  direction: rtl;
-  margin-top: 1px;
+.slip-banner-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 /* Separator lines */

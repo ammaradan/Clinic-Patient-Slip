@@ -263,14 +263,31 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    // Try direct Bluetooth printing if connected
+    // Try direct high-speed Bluetooth printing if connected
     let printedViaBluetooth = false;
     if (btPrinter.isConnected) {
-      showToast('Bluetooth پرنٹر پر پرنٹ بھیجا جا رہا ہے...');
+      showToast('Bluetooth پرنٹر پر تیز پرنٹ بھیجا جا رہا ہے...');
+      const dateStr = slipDate.textContent.replace('📅', '').trim();
+      const timeStr = slipTime.textContent.replace('🕒', '').trim();
+      const patientData = {
+        name,
+        guardian,
+        address,
+        reason,
+        date: dateStr,
+        time: timeStr
+      };
+
       try {
-        printedViaBluetooth = await btPrinter.printReceiptElement('printableSlip');
+        printedViaBluetooth = await btPrinter.printFastSlip(patientData);
       } catch (err) {
-        console.error('Bluetooth print failed, falling back to window.print():', err);
+        console.warn('Fast print failed, trying element print:', err);
+        try {
+          printedViaBluetooth = await btPrinter.printReceiptElement('printableSlip');
+        } catch (e2) {
+          console.error('All bluetooth print methods failed:', e2);
+          showToast('Bluetooth Print Failed: ' + e2.message);
+        }
       }
     }
 

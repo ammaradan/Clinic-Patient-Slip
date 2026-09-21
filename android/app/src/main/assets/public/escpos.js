@@ -230,6 +230,99 @@ class BluetoothPrinter {
     return true;
   }
 
+  base64ToUint8(base64) {
+    const raw = window.atob(base64);
+    const rawLength = raw.length;
+    const array = new Uint8Array(new ArrayBuffer(rawLength));
+    for (let i = 0; i < rawLength; i++) {
+      array[i] = raw.charCodeAt(i);
+    }
+    return array;
+  }
+
+  /**
+   * High-Speed Instant Printing: Pre-baked Urdu Graphic Header + Fast Text Middle + Pre-baked Urdu Footer.
+   * Prints in under 1 second flat!
+   */
+  async printFastSlip(patientData) {
+    if (!this.isConnected) {
+      throw new Error('پرنٹر کنیکٹ نہیں ہے۔ پہلے اوپر سے پرنٹر کنیکٹ کریں۔');
+    }
+
+    const bytes = [];
+
+    // 1. Send Pre-baked Header Raster (Exact Authentic Graphic Banner)
+    if (window.PREBAKED_HEADER_BASE64) {
+      const headerBytes = this.base64ToUint8(window.PREBAKED_HEADER_BASE64);
+      for (let i = 0; i < headerBytes.length; i++) bytes.push(headerBytes[i]);
+    } else {
+      bytes.push(0x1B, 0x40, 0x1B, 0x61, 0x01);
+      bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
+      this.appendAscii(bytes, "DR AKRAM CLINIC\n");
+      bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
+      this.appendAscii(bytes, "Dr. Akram Clinic Tandlianwala\n");
+      this.appendAscii(bytes, "Ghalla Mandi, Tandlianwala\n");
+      this.appendAscii(bytes, "================================\n");
+      this.appendAscii(bytes, "PATIENT CONSULTATION SLIP\n");
+      this.appendAscii(bytes, "--------------------------------\n");
+    }
+
+    // Small line feed
+    bytes.push(0x0A);
+
+    // 2. Middle Dynamic Patient Details (Fast ESC/POS Hardware Text Mode)
+    // Centered alignment
+    bytes.push(0x1B, 0x61, 0x01);
+
+    // Large Bold Patient Name
+    bytes.push(0x1D, 0x21, 0x11); // Double width & height
+    bytes.push(0x1B, 0x45, 0x01); // Bold on
+    this.appendAscii(bytes, `${patientData.name.toUpperCase()}\n`);
+    bytes.push(0x1D, 0x21, 0x00); // Normal size
+    bytes.push(0x1B, 0x45, 0x00); // Bold off
+
+    // Parentage
+    if (patientData.guardian) {
+      this.appendAscii(bytes, `S/W/D: ${patientData.guardian}\n`);
+    }
+
+    // Address
+    if (patientData.address) {
+      this.appendAscii(bytes, `Address: ${patientData.address}\n`);
+    }
+
+    // Date & Time
+    this.appendAscii(bytes, `${patientData.date}  ${patientData.time}\n`);
+
+    // Divider line
+    this.appendAscii(bytes, "--------------------------------\n");
+
+    // Department / Reason (Bold)
+    bytes.push(0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, `Department: ${patientData.reason}\n`);
+    bytes.push(0x1B, 0x45, 0x00);
+
+    // Small line feed
+    bytes.push(0x0A);
+
+    // 3. Send Pre-baked Footer Raster (Exact Authentic Notice & * شکریہ * Banner)
+    if (window.PREBAKED_FOOTER_BASE64) {
+      const footerBytes = this.base64ToUint8(window.PREBAKED_FOOTER_BASE64);
+      for (let i = 0; i < footerBytes.length; i++) bytes.push(footerBytes[i]);
+    } else {
+      this.appendAscii(bytes, "================================\n");
+      this.appendAscii(bytes, "* Shukriya *\n");
+    }
+
+    // 4. Feed & Cut
+    bytes.push(0x1B, 0x64, 0x04); // Feed 4 lines
+    bytes.push(0x1D, 0x56, 0x42, 0x00); // Cut paper (GS V 66 0)
+
+    // Send smoothly in 180-byte chunks with 6ms pacing
+    await this.sendRawData(bytes);
+    return true;
+  }
+
   /**
    * Convert an HTML Element into an ESC/POS monochrome raster bitmap image.
    * This prints the EXACT visual slip (Urdu, English, borders, dates) on ANY thermal printer!

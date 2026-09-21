@@ -167,23 +167,12 @@
         <div class="receipt-paper-wrapper">
           <div id="printableSlip" class="receipt-slip">
             
-            <!-- Clinic Header (Urdu & English) -->
-            <div class="receipt-clinic-header">
-              <div class="clinic-en-name">DR AKRAM CLINIC</div>
-              <div class="clinic-ur-name">ڈاکٹر اکرم کلینک</div>
-              <div class="clinic-sub-en">Dr. Akram Clinic Tandlianwala</div>
-              <div class="clinic-sub-ur">گلہ منڈی، تاندلیانوالہ</div>
+            <!-- Exact Graphic Header Banner matching User's Image -->
+            <div class="receipt-header-img-wrap">
+              <img src="header.png" alt="Dr. Akram Clinic Header" class="slip-banner-img">
             </div>
 
-            <!-- Divider line -->
-            <div class="receipt-double-line">================================</div>
-
-            <!-- Slip Type Title -->
-            <div class="receipt-slip-title">
-              PATIENT CONSULTATION SLIP / مریض پرچی
-            </div>
-
-            <!-- High-Contrast Patient Box matching Screenshot 1 -->
+            <!-- High-Contrast Patient Box (Middle Section) -->
             <div class="receipt-patient-box">
               <div class="box-label-row">
                 <span class="box-label">PATIENT NAME / مریض کا نام</span>
@@ -199,14 +188,14 @@
 
               <!-- Address line -->
               <div id="slipAddressRow" class="box-address">
-                <span class="address-tag">📍 Address / پتہ:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
+                <span class="address-tag">Address:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
               </div>
 
               <!-- Date and Live Time -->
               <div class="box-meta-row">
-                <span id="slipDate">📅 2026-09-21</span>
+                <span id="slipDate">2026-09-21</span>
                 <span>•</span>
-                <span id="slipTime">🕒 08:10 PM</span>
+                <span id="slipTime">08:10 PM</span>
               </div>
             </div>
 
@@ -216,25 +205,14 @@
             <!-- Consultation details -->
             <div class="receipt-meta-grid">
               <div class="meta-row">
-                <span class="meta-key">Department / شعبہ:</span>
+                <span class="meta-key">Department:</span>
                 <span id="slipConsultation" class="meta-value">General Checkup</span>
               </div>
             </div>
 
-            <!-- Single dashed line -->
-            <div class="receipt-single-line">--------------------------------</div>
-
-            <!-- Urdu Notice: ویٹنگ ایریا اور نام پکارا جائے گا -->
-            <div class="receipt-notice-urdu">
-              برائے مہربانی ویٹنگ ایریا میں تشریف رکھیں، آپ کا نام پکارا جائے گا۔
-            </div>
-
-            <!-- Divider line -->
-            <div class="receipt-double-line">================================</div>
-
-            <!-- Footer: صرف شکریہ -->
-            <div class="receipt-footer">
-              <div class="footer-thanks">* شکریہ *</div>
+            <!-- Exact Graphic Footer Banner matching User's Image -->
+            <div class="receipt-footer-img-wrap">
+              <img src="footer.png" alt="Dr. Akram Clinic Notice & Footer" class="slip-banner-img">
             </div>
 
             <!-- Thermal paper cut guide (Single line, strictly non-wrapping) -->
@@ -289,13 +267,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="html2canvas.min.js?v=1.1.5"></script>
-  <script src="escpos.js?v=1.1.5"></script>
-  <script src="app.js?v=1.1.5"></script>
+  <script src="graphics.js?v=1.1.6"></script>
+  <script src="html2canvas.min.js?v=1.1.6"></script>
+  <script src="escpos.js?v=1.1.6"></script>
+  <script src="app.js?v=1.1.6"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.1.5').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.1.6').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });
