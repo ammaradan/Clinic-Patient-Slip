@@ -32,6 +32,11 @@ jobs:
           npm install
           node build.js
 
+      - name: Setup Android SDK Environment
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          cat android/local.properties
+
       - name: Grant Execute Permission for Gradlew
         run: |
           chmod +x android/gradlew
@@ -39,7 +44,7 @@ jobs:
       - name: Build Android APK with Gradle
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Prepare APK Output
         run: |
@@ -57,8 +62,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.5
-          name: "Dr. Akram Clinic App v1.0.5 (APK)"
+          tag_name: v1.0.6
+          name: "Dr. Akram Clinic App v1.0.6 (APK)"
           body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer."
           files: output/Dr-Akram-Clinic.apk
         env:
