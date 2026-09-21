@@ -114,28 +114,26 @@
               >
             </div>
 
-            <!-- Field 4: Reason / Department -->
+            <!-- Field 4: Reason / Department (Only 3 options requested) -->
             <div class="form-group">
               <label for="consultationReason" class="form-label">
                 <span>Reason / Department</span>
-                <span class="urdu-label">معائنہ کی وجہ</span>
+                <span class="urdu-label">معائنہ کی وجہ / شعبہ</span>
               </label>
               <input 
                 type="text" 
                 id="consultationReason" 
                 name="consultationReason"
                 class="form-input" 
-                placeholder="e.g. General Checkup, Fever, BP..." 
+                placeholder="Select or enter reason" 
                 value="General Checkup"
                 autocomplete="off"
               >
-              <!-- Quick Select Badges -->
+              <!-- Quick Select Badges (Strictly only 3 requested: General Checkup, Emergency, US) -->
               <div class="quick-tags">
-                <button type="button" class="tag-btn active" data-val="General Checkup">General Checkup</button>
-                <button type="button" class="tag-btn" data-val="Fever / Flu">Fever / Flu</button>
-                <button type="button" class="tag-btn" data-val="High BP">High BP</button>
-                <button type="button" class="tag-btn" data-val="Sugar">Sugar</button>
-                <button type="button" class="tag-btn" data-val="Emergency">Emergency</button>
+                <button type="button" class="tag-btn active" data-val="General Checkup">🩺 General Checkup</button>
+                <button type="button" class="tag-btn" data-val="Emergency">🚨 Emergency</button>
+                <button type="button" class="tag-btn" data-val="US (Ultrasound)">🔬 US (Ultrasound)</button>
               </div>
             </div>
 
@@ -143,17 +141,14 @@
             <div class="actions-group">
               <button type="button" id="btnPrintSlip" class="btn-primary-print">
                 <span class="print-icon">🖨️</span>
-                <span class="btn-title">Issue & Print Slip (پرنٹ پرچی)</span>
+                <span>پرچی پرنٹ کریں (Issue & Print Slip)</span>
               </button>
-
-              <div class="secondary-actions">
-                <button type="button" id="btnReprintLast" class="btn-secondary" title="Reprint Last Slip">
-                  🔄 Reprint Last
-                </button>
-                <button type="button" id="btnClearForm" class="btn-secondary" title="Clear Fields">
-                  🧹 Clear
-                </button>
-              </div>
+              <button type="button" id="btnReprintLast" class="btn-secondary" title="Reprint Last Slip">
+                🔄 Reprint Last
+              </button>
+              <button type="button" id="btnClearForm" class="btn-secondary" title="Clear Fields">
+                🧹 Clear
+              </button>
             </div>
 
           </form>
@@ -161,22 +156,23 @@
         </div>
       </section>
 
-      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview matching Screenshot 1 (Compact & Urdu Only) -->
+      <!-- RIGHT / PREVIEW: Exact Thermal Slip Preview (Urdu & English) -->
       <section class="preview-section">
         <div class="preview-header-bar">
           <span class="preview-title">80mm Thermal Slip Preview</span>
-          <span class="preview-subtitle">Concise Format</span>
+          <span class="preview-subtitle">Dr. Akram Clinic</span>
         </div>
 
         <!-- The Printable 80mm Slip Container -->
         <div class="receipt-paper-wrapper">
           <div id="printableSlip" class="receipt-slip">
             
-            <!-- Clinic Header -->
+            <!-- Clinic Header (Urdu & English) -->
             <div class="receipt-clinic-header">
               <div class="clinic-en-name">DR AKRAM CLINIC</div>
               <div class="clinic-ur-name">ڈاکٹر اکرم کلینک</div>
-              <div class="clinic-info-line">📍 Ghalla Mandi, Tandlianwala</div>
+              <div class="clinic-sub-en">Dr. Akram Clinic Tandlianwala</div>
+              <div class="clinic-sub-ur">گلہ منڈی، تاندلیانوالہ</div>
             </div>
 
             <!-- Divider line -->
@@ -203,14 +199,14 @@
 
               <!-- Address line -->
               <div id="slipAddressRow" class="box-address">
-                <span>📍</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
+                <span class="address-tag">📍 Address / پتہ:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
               </div>
 
               <!-- Date and Live Time -->
               <div class="box-meta-row">
                 <span id="slipDate">📅 2026-09-21</span>
                 <span>•</span>
-                <span id="slipTime">🕒 05:30 PM</span>
+                <span id="slipTime">🕒 08:10 PM</span>
               </div>
             </div>
 
@@ -220,7 +216,7 @@
             <!-- Consultation details -->
             <div class="receipt-meta-grid">
               <div class="meta-row">
-                <span class="meta-key">Consultation:</span>
+                <span class="meta-key">Department / شعبہ:</span>
                 <span id="slipConsultation" class="meta-value">General Checkup</span>
               </div>
             </div>

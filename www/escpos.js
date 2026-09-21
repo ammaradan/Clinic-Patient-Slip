@@ -113,14 +113,23 @@ class BluetoothPrinter {
 
       this.server = await this.device.gatt.connect();
 
+      // Find write characteristic (prefer writeWithoutResponse for high speed)
       for (const serviceUuid of this.POS_SERVICES) {
         try {
           const service = await this.server.getPrimaryService(serviceUuid);
           const chars = await service.getCharacteristics();
           for (const char of chars) {
-            if (char.properties.write || char.properties.writeWithoutResponse) {
+            if (char.properties.writeWithoutResponse) {
               this.characteristic = char;
               break;
+            }
+          }
+          if (!this.characteristic) {
+            for (const char of chars) {
+              if (char.properties.write) {
+                this.characteristic = char;
+                break;
+              }
             }
           }
           if (this.characteristic) break;
@@ -133,9 +142,17 @@ class BluetoothPrinter {
           try {
             const chars = await service.getCharacteristics();
             for (const char of chars) {
-              if (char.properties.write || char.properties.writeWithoutResponse) {
+              if (char.properties.writeWithoutResponse) {
                 this.characteristic = char;
                 break;
+              }
+            }
+            if (!this.characteristic) {
+              for (const char of chars) {
+                if (char.properties.write) {
+                  this.characteristic = char;
+                  break;
+                }
               }
             }
             if (this.characteristic) break;
@@ -192,19 +209,23 @@ class BluetoothPrinter {
     }
 
     if (!this.characteristic) {
-      throw new Error('Print channel not available');
+      throw new Error('پرنٹر کا پرنٹنگ چینل دستیاب نہیں ہے۔');
     }
 
-    const CHUNK_SIZE = 100;
+    // High speed streaming: 180-byte chunks with 6ms pacing for writeWithoutResponse
+    const isNoResponse = !!(this.characteristic.properties.writeWithoutResponse);
+    const CHUNK_SIZE = isNoResponse ? 180 : 80;
+    const DELAY_MS = isNoResponse ? 6 : 18;
+
     for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
       const chunk = byteArray.slice(i, i + CHUNK_SIZE);
       const buffer = new Uint8Array(chunk);
-      if (this.characteristic.properties.writeWithoutResponse) {
+      if (isNoResponse) {
         await this.characteristic.writeValueWithoutResponse(buffer);
       } else {
         await this.characteristic.writeValue(buffer);
       }
-      await new Promise(r => setTimeout(r, 20));
+      await new Promise(r => setTimeout(r, DELAY_MS));
     }
     return true;
   }
@@ -215,11 +236,18 @@ class BluetoothPrinter {
    */
   async printReceiptElement(elementId, targetWidthDots = 576) {
     if (!this.isConnected) {
-      return false;
+      throw new Error('پرنٹر کنیکٹ نہیں ہے۔ پہلے اوپر سے پرنٹر کنیکٹ کریں۔');
     }
 
     const element = document.getElementById(elementId);
-    if (!element) return false;
+    if (!element) throw new Error('پرچی کا مواد نہیں ملا');
+
+    // Wait for fonts to be ready so Urdu Nastaliq is rendered fully
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {}
+    }
 
     // Check if html2canvas is available
     if (typeof html2canvas !== 'function') {
@@ -231,7 +259,7 @@ class BluetoothPrinter {
 
     // Capture element to canvas
     const renderedCanvas = await html2canvas(element, {
-      scale: 2,
+      scale: 1.8,
       backgroundColor: '#ffffff',
       logging: false,
       useCORS: true
@@ -259,7 +287,7 @@ class BluetoothPrinter {
 
   /**
    * Convert Canvas 2D image data to ESC/POS Raster Bit Image (GS v 0) commands.
-   * Slices image into small bands to avoid overflowing printer RAM buffers.
+   * Slices image into 48-pixel bands for smooth continuous printhead movement.
    */
   canvasToEscPosRaster(canvas) {
     const ctx = canvas.getContext('2d');
@@ -277,8 +305,8 @@ class BluetoothPrinter {
     // Center alignment: ESC a 1
     bytes.push(0x1B, 0x61, 0x01);
 
-    // Print in vertical slices of 24 pixels to prevent buffer overflows on microcontrollers
-    const SLICE_HEIGHT = 24;
+    // Print in vertical slices of 48 pixels for smooth gliding paper movement
+    const SLICE_HEIGHT = 48;
 
     for (let y = 0; y < height; y += SLICE_HEIGHT) {
       const sliceH = Math.min(SLICE_HEIGHT, height - y);
@@ -306,8 +334,8 @@ class BluetoothPrinter {
 
               // Luminance calculation
               const luminance = (0.299 * r + 0.587 * g + 0.114 * bPixel);
-              // Black dot if dark enough
-              if (a > 128 && luminance < 185) {
+              // High contrast black dot threshold for crisp Urdu script
+              if (a > 128 && luminance < 195) {
                 byteVal |= (1 << (7 - b));
               }
             }
