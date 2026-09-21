@@ -1,0 +1,9 @@
+{
+  "appId": "com.drakramclinic.slip",
+  "appName": "Dr Akram Clinic",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}
