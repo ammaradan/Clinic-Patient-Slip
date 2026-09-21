@@ -722,3 +722,232 @@ body {
     display: block !important;
   }
 }
+
+/* Bluetooth Device Picker Modal */
+.bt-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.bt-modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.bt-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.bt-modal-content {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.bt-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #0f3d32;
+  color: #ffffff;
+}
+
+.bt-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bt-modal-icon {
+  font-size: 24px;
+}
+
+.bt-modal-title h3 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.bt-modal-title p {
+  font-size: 11px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.bt-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.bt-modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-device-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bt-device-item:hover, .bt-device-item:active {
+  background: #e6f7f2;
+  border-color: #0f3d32;
+  transform: translateY(-1px);
+}
+
+.bt-device-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bt-device-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.bt-device-address {
+  font-size: 11px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.bt-device-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #0f3d32;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.bt-no-devices {
+  text-align: center;
+  padding: 24px 12px;
+  color: #475569;
+}
+
+.bt-no-devices p {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.bt-no-devices .sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.bt-modal-status {
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f3d32;
+  background: #e6f7f2;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #0f3d32;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.bt-modal-footer {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-settings {
+  width: 100%;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-settings:hover {
+  background: #e2e8f0;
+}
+

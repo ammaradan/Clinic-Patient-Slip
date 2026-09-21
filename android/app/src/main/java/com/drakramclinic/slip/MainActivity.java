@@ -13,6 +13,14 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Inject Native Android Bluetooth Bridge into WebView for offline thermal printing
+        if (this.bridge != null && this.bridge.getWebView() != null) {
+            this.bridge.getWebView().addJavascriptInterface(
+                new AndroidBluetoothBridge(this),
+                "AndroidBluetooth"
+            );
+        }
+
         // Request Bluetooth permissions for Android 12+ (API 31+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             String[] permissions = {

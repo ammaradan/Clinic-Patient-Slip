@@ -1,7 +1,11 @@
 /**
- * ESC/POS & Web Bluetooth Printer Driver with Raster Bitmap (Graphics) Support
- * Enables 100% accurate printing of Urdu Nastaliq text, borders, and symbols
- * on ANY 80mm / 58mm Thermal Bluetooth Receipt Printer.
+ * ESC/POS & Bluetooth Thermal Receipt Printer Driver
+ * Supports BOTH:
+ * 1. Native Android APK via SPP (Serial Port Profile) RFCOMM / AndroidBluetooth Bridge
+ * 2. Web Bluetooth API in Google Chrome (Desktop & Android)
+ *
+ * Includes 1-Bit Monochrome Raster Graphics for 100% accurate Urdu Nastaliq
+ * typography, borders, and symbols on ANY 80mm / 58mm Thermal Printer.
  */
 
 class BluetoothPrinter {
@@ -12,22 +16,82 @@ class BluetoothPrinter {
     this.isConnected = false;
     this.deviceName = '';
 
-    // Standard BLE UUIDs used by 80mm/58mm thermal receipt printers
+    // Standard BLE UUIDs for thermal printers
     this.POS_SERVICES = [
-      '000018f0-0000-1000-8000-00805f9b34fb', // Very common POS service
+      '000018f0-0000-1000-8000-00805f9b34fb',
       'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-      '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC transparent UART
-      '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10 BLE module
+      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+      '0000ffe0-0000-1000-8000-00805f9b34fb',
       '0000ff00-0000-1000-8000-00805f9b34fb'
     ];
   }
 
-  isSupported() {
+  isNativeAndroid() {
+    return !!(window.AndroidBluetooth && typeof window.AndroidBluetooth.connect === 'function');
+  }
+
+  isWebBluetooth() {
     return !!(navigator.bluetooth && navigator.bluetooth.requestDevice);
   }
 
-  async connect(onStatusChange) {
-    if (!this.isSupported()) {
+  isSupported() {
+    return this.isNativeAndroid() || this.isWebBluetooth();
+  }
+
+  getBondedDevices() {
+    if (this.isNativeAndroid()) {
+      try {
+        const json = window.AndroidBluetooth.getBondedDevices();
+        return JSON.parse(json || '[]');
+      } catch (e) {
+        console.error('Error getting bonded devices:', e);
+        return [];
+      }
+    }
+    return [];
+  }
+
+  openSettings() {
+    if (this.isNativeAndroid()) {
+      window.AndroidBluetooth.openBluetoothSettings();
+    }
+  }
+
+  async connectNative(address, name, onStatusChange) {
+    if (!this.isNativeAndroid()) {
+      throw new Error('Native Bluetooth interface is not available');
+    }
+
+    onStatusChange && onStatusChange('Connecting to ' + (name || address) + '...', false);
+    
+    // Connect in async manner to avoid UI freezing
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        try {
+          const res = window.AndroidBluetooth.connect(address);
+          if (res && res.startsWith('OK:')) {
+            this.isConnected = true;
+            this.deviceName = name || res.substring(3) || 'Thermal Printer';
+            localStorage.setItem('last_printer_address', address);
+            localStorage.setItem('last_printer_name', this.deviceName);
+            onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+            resolve(true);
+          } else {
+            this.isConnected = false;
+            onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+            reject(new Error(res ? res.replace('ERROR: ', '') : 'Connection failed'));
+          }
+        } catch (e) {
+          this.isConnected = false;
+          onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+          reject(e);
+        }
+      }, 50);
+    });
+  }
+
+  async connectWeb(onStatusChange) {
+    if (!this.isWebBluetooth()) {
       throw new Error('Web Bluetooth is not supported in this browser. Please open in Google Chrome on Android or PC.');
     }
 
@@ -94,12 +158,63 @@ class BluetoothPrinter {
     }
   }
 
+  disconnect() {
+    if (this.isNativeAndroid()) {
+      window.AndroidBluetooth.disconnect();
+    } else if (this.device && this.device.gatt) {
+      try {
+        this.device.gatt.disconnect();
+      } catch (e) {}
+    }
+    this.isConnected = false;
+    this.characteristic = null;
+    this.deviceName = '';
+  }
+
+  uint8ToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
+  async sendRawData(byteArray) {
+    if (this.isNativeAndroid()) {
+      const base64 = this.uint8ToBase64(byteArray);
+      const res = window.AndroidBluetooth.sendData(base64);
+      if (res && res.startsWith('ERROR')) {
+        throw new Error(res.replace('ERROR: ', ''));
+      }
+      return true;
+    }
+
+    if (!this.characteristic) {
+      throw new Error('Print channel not available');
+    }
+
+    const CHUNK_SIZE = 100;
+    for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
+      const chunk = byteArray.slice(i, i + CHUNK_SIZE);
+      const buffer = new Uint8Array(chunk);
+      if (this.characteristic.properties.writeWithoutResponse) {
+        await this.characteristic.writeValueWithoutResponse(buffer);
+      } else {
+        await this.characteristic.writeValue(buffer);
+      }
+      await new Promise(r => setTimeout(r, 20));
+    }
+    return true;
+  }
+
   /**
    * Convert an HTML Element into an ESC/POS monochrome raster bitmap image.
    * This prints the EXACT visual slip (Urdu, English, borders, dates) on ANY thermal printer!
    */
   async printReceiptElement(elementId, targetWidthDots = 576) {
-    if (!this.isConnected || !this.characteristic) {
+    if (!this.isConnected) {
       return false;
     }
 
@@ -122,60 +237,63 @@ class BluetoothPrinter {
       useCORS: true
     });
 
-    // Scale canvas to exact printer width (576 dots for 80mm printers, 72 bytes/line)
-    const scaledWidth = targetWidthDots;
-    const scaledHeight = Math.round((renderedCanvas.height / renderedCanvas.width) * scaledWidth);
+    // Scale canvas to target printer width (576 dots for 80mm)
+    const targetWidth = targetWidthDots;
+    const scaleFactor = targetWidth / renderedCanvas.width;
+    const targetHeight = Math.round(renderedCanvas.height * scaleFactor);
 
-    const printCanvas = document.createElement('canvas');
-    printCanvas.width = scaledWidth;
-    printCanvas.height = scaledHeight;
-    const ctx = printCanvas.getContext('2d');
-    
-    // Fill pure white background
+    const scaledCanvas = document.createElement('canvas');
+    scaledCanvas.width = targetWidth;
+    scaledCanvas.height = targetHeight;
+    const ctx = scaledCanvas.getContext('2d');
+
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, scaledWidth, scaledHeight);
-    
-    // Draw high quality rendered image
-    ctx.drawImage(renderedCanvas, 0, 0, scaledWidth, scaledHeight);
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(renderedCanvas, 0, 0, targetWidth, targetHeight);
 
-    const imgData = ctx.getImageData(0, 0, scaledWidth, scaledHeight);
-    const rasterCommands = this.canvasToEscPosRaster(imgData, scaledWidth, scaledHeight);
-
-    // Send chunks over Bluetooth
-    await this.sendRawData(rasterCommands);
+    // Convert canvas image into 1-bit ESC/POS raster bitmap commands (GS v 0)
+    const escposBytes = this.canvasToEscPosRaster(scaledCanvas);
+    await this.sendRawData(escposBytes);
     return true;
   }
 
   /**
-   * Convert ImageData into ESC/POS GS v 0 raster bit image commands
-   * Sliced into 24-dot strips to prevent printer buffer overflow.
+   * Convert Canvas 2D image data to ESC/POS Raster Bit Image (GS v 0) commands.
+   * Slices image into small bands to avoid overflowing printer RAM buffers.
    */
-  canvasToEscPosRaster(imgData, width, height) {
-    const bytes = [];
+  canvasToEscPosRaster(canvas) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const imgData = ctx.getImageData(0, 0, width, height);
     const pixels = imgData.data;
+
+    const bytesPerLine = Math.ceil(width / 8);
+    const bytes = [];
 
     // Initialize printer: ESC @
     bytes.push(0x1B, 0x40);
-    // Align center: ESC a 1
+
+    // Center alignment: ESC a 1
     bytes.push(0x1B, 0x61, 0x01);
 
-    const widthInBytes = Math.ceil(width / 8);
-    const SLICE_HEIGHT = 24; // 24 dots per vertical slice
+    // Print in vertical slices of 24 pixels to prevent buffer overflows on microcontrollers
+    const SLICE_HEIGHT = 24;
 
     for (let y = 0; y < height; y += SLICE_HEIGHT) {
       const sliceH = Math.min(SLICE_HEIGHT, height - y);
 
-      // GS v 0 0 xL xH yL yH
-      const xL = widthInBytes & 0xFF;
-      const xH = (widthInBytes >> 8) & 0xFF;
-      const yL = sliceH & 0xFF;
-      const yH = (sliceH >> 8) & 0xFF;
+      // GS v 0 m xL xH yL yH
+      const xL = bytesPerLine % 256;
+      const xH = Math.floor(bytesPerLine / 256);
+      const yL = sliceH % 256;
+      const yH = Math.floor(sliceH / 256);
 
       bytes.push(0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH);
 
-      for (let row = 0; row < sliceH; row++) {
-        const currentY = y + row;
-        for (let col = 0; col < widthInBytes; col++) {
+      for (let sy = 0; sy < sliceH; sy++) {
+        const currentY = y + sy;
+        for (let col = 0; col < bytesPerLine; col++) {
           let byteVal = 0;
           for (let b = 0; b < 8; b++) {
             const x = col * 8 + b;
@@ -205,20 +323,6 @@ class BluetoothPrinter {
     bytes.push(0x1D, 0x56, 0x42, 0x00);
 
     return bytes;
-  }
-
-  async sendRawData(byteArray) {
-    const CHUNK_SIZE = 100;
-    for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
-      const chunk = byteArray.slice(i, i + CHUNK_SIZE);
-      const buffer = new Uint8Array(chunk);
-      if (this.characteristic.properties.writeWithoutResponse) {
-        await this.characteristic.writeValueWithoutResponse(buffer);
-      } else {
-        await this.characteristic.writeValue(buffer);
-      }
-      await new Promise(r => setTimeout(r, 20));
-    }
   }
 
   /**

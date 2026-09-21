@@ -99,27 +99,123 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('فارم صاف کر دیا گیا');
   });
 
-  // --- Bluetooth Connection Handling ---
+  // --- Bluetooth Device Modal Elements (Native Android) ---
+  const btDeviceModal = document.getElementById('btDeviceModal');
+  const btModalBackdrop = document.getElementById('btModalBackdrop');
+  const btModalClose = document.getElementById('btModalClose');
+  const btDeviceList = document.getElementById('btDeviceList');
+  const btNoDevices = document.getElementById('btNoDevices');
+  const btDeviceLoading = document.getElementById('btDeviceLoading');
+  const btnOpenBtSettings = document.getElementById('btnOpenBtSettings');
+
+  function openBtModal() {
+    if (btDeviceModal) {
+      btDeviceModal.classList.remove('hidden');
+      refreshBondedDevices();
+    }
+  }
+
+  function closeBtModal() {
+    if (btDeviceModal) {
+      btDeviceModal.classList.add('hidden');
+      if (btDeviceLoading) btDeviceLoading.classList.add('hidden');
+    }
+  }
+
+  if (btModalBackdrop) btModalBackdrop.addEventListener('click', closeBtModal);
+  if (btModalClose) btModalClose.addEventListener('click', closeBtModal);
+  if (btnOpenBtSettings) {
+    btnOpenBtSettings.addEventListener('click', () => {
+      btPrinter.openSettings();
+    });
+  }
+
+  function refreshBondedDevices() {
+    if (!btDeviceList) return;
+    btDeviceList.innerHTML = '';
+    if (btDeviceLoading) btDeviceLoading.classList.add('hidden');
+
+    const devices = btPrinter.getBondedDevices();
+    if (!devices || devices.length === 0) {
+      if (btNoDevices) btNoDevices.classList.remove('hidden');
+      return;
+    }
+
+    if (btNoDevices) btNoDevices.classList.add('hidden');
+    const lastAddr = localStorage.getItem('last_printer_address');
+
+    devices.forEach(dev => {
+      const item = document.createElement('div');
+      item.className = 'bt-device-item';
+      const isLast = (dev.address === lastAddr);
+
+      item.innerHTML = `
+        <div class="bt-device-info">
+          <span style="font-size: 20px;">🖨️</span>
+          <div>
+            <div class="bt-device-name">${dev.name}</div>
+            <div class="bt-device-address">${dev.address}</div>
+          </div>
+        </div>
+        ${isLast ? '<span class="bt-device-badge">آخری استعمال شدہ</span>' : '<span style="font-size: 11px; color:#0f3d32; font-weight:700;">کنیکٹ کریں ➜</span>'}
+      `;
+
+      item.addEventListener('click', async () => {
+        if (btDeviceLoading) btDeviceLoading.classList.remove('hidden');
+        try {
+          await btPrinter.connectNative(dev.address, dev.name, (status, isConnected) => {
+            btStatusText.textContent = `Bluetooth: ${status}`;
+            btnConnectBt.className = `bt-status-btn ${isConnected ? 'connected' : 'disconnected'}`;
+          });
+          closeBtModal();
+          showToast(`پرنٹر ${dev.name} کامیابی سے کنیکٹ ہو گیا!`);
+        } catch (err) {
+          if (btDeviceLoading) btDeviceLoading.classList.add('hidden');
+          showToast(`کنکشن ناکام: ${err.message}`);
+        }
+      });
+
+      btDeviceList.appendChild(item);
+    });
+  }
+
+  // --- Bluetooth Connection Button Handling ---
   btnConnectBt.addEventListener('click', async () => {
     if (btPrinter.isConnected) {
       if (confirm('Bluetooth پرنٹر پہلے سے کنیکٹ ہے، کیا ڈسکنیکٹ کرنا چاہتے ہیں؟')) {
-        btPrinter.device?.gatt?.disconnect();
+        btPrinter.disconnect();
+        btStatusText.textContent = 'Bluetooth Printer: Disconnected (Tap to Connect)';
+        btnConnectBt.className = 'bt-status-btn disconnected';
+        showToast('پرنٹر ڈسکنیکٹ کر دیا گیا');
       }
       return;
     }
 
-    try {
-      await btPrinter.connect((status, isConnected) => {
-        btStatusText.textContent = `Bluetooth: ${status}`;
-        btnConnectBt.className = `bt-status-btn ${isConnected ? 'connected' : 'disconnected'}`;
-      });
-      showToast('پرنٹر کنیکٹ ہو گیا! Ready to print.');
-    } catch (err) {
-      console.warn('Bluetooth connect error:', err);
-      if (err.name !== 'NotFoundError') {
-        showToast('Bluetooth Connection Failed: ' + err.message);
-      }
+    // 1. If running inside Android APK with Native Bluetooth Bridge
+    if (btPrinter.isNativeAndroid()) {
+      openBtModal();
+      return;
     }
+
+    // 2. If running inside Chrome browser with Web Bluetooth
+    if (btPrinter.isWebBluetooth()) {
+      try {
+        await btPrinter.connectWeb((status, isConnected) => {
+          btStatusText.textContent = `Bluetooth: ${status}`;
+          btnConnectBt.className = `bt-status-btn ${isConnected ? 'connected' : 'disconnected'}`;
+        });
+        showToast('پرنٹر کنیکٹ ہو گیا! Ready to print.');
+      } catch (err) {
+        console.warn('Bluetooth connect error:', err);
+        if (err.name !== 'NotFoundError') {
+          showToast('Bluetooth Connection Failed: ' + err.message);
+        }
+      }
+      return;
+    }
+
+    // 3. Fallback if neither is available
+    showToast('اس براؤزر میں بلوٹوتھ سپورٹ نہیں ہے۔ آپ ایپ یا گوگل کروم استعمال کریں۔');
   });
 
   // --- Issue & Print Action ---

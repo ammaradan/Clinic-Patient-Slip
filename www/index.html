@@ -253,6 +253,40 @@
 
     </main>
 
+    <!-- Bluetooth Device Picker Modal (for Native Android APK) -->
+    <div id="btDeviceModal" class="bt-modal hidden">
+      <div class="bt-modal-backdrop" id="btModalBackdrop"></div>
+      <div class="bt-modal-content">
+        <div class="bt-modal-header">
+          <div class="bt-modal-title">
+            <span class="bt-modal-icon">🖨️</span>
+            <div>
+              <h3>بلوٹوتھ پرنٹر منتخب کریں</h3>
+              <p>Select Paired Bluetooth Printer</p>
+            </div>
+          </div>
+          <button id="btModalClose" class="bt-modal-close" title="بند کریں">&times;</button>
+        </div>
+        <div class="bt-modal-body">
+          <div id="btDeviceLoading" class="bt-modal-status hidden">
+            <span class="spinner"></span> پرنٹر سے کنیکٹ کیا جا رہا ہے...
+          </div>
+          <div id="btDeviceList" class="bt-device-list">
+            <!-- Dynamically populated -->
+          </div>
+          <div id="btNoDevices" class="bt-no-devices hidden">
+            <p>کوئی پیئرڈ پرنٹر نہیں ملا۔</p>
+            <p class="sub">موبائل کی بلوٹوتھ سیٹنگز میں جا کر پہلے پرنٹر کو پیئر (Pair) کریں۔</p>
+          </div>
+        </div>
+        <div class="bt-modal-footer">
+          <button id="btnOpenBtSettings" class="btn-settings">
+            <span>⚙️</span> بلوٹوتھ سیٹنگز کھولیں (Pair New)
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
