@@ -172,41 +172,40 @@
               <img src="header.png" alt="Dr. Akram Clinic Header" class="slip-banner-img">
             </div>
 
-            <!-- High-Contrast Patient Box (Middle Section) -->
-            <div class="receipt-patient-box">
-              <div class="box-label-row">
-                <span class="box-label">PATIENT NAME / مریض کا نام</span>
+            <div class="receipt-body-content">
+              <!-- High-Contrast Patient Box (Middle Section) -->
+              <div class="receipt-patient-box">
+                <div class="box-label-row">
+                  <span class="box-label">PATIENT NAME</span>
+                </div>
+
+                <!-- Big Bold Patient Name -->
+                <div id="slipPatientName" class="box-patient-name">AAAA</div>
+                
+                <!-- Parentage line: S/W/D default -->
+                <div id="slipParentageRow" class="box-parentage">
+                  <span class="parentage-tag">S/W/D:</span> <span id="slipGuardian">Muhammad Ali</span>
+                </div>
+
+                <!-- Address line -->
+                <div id="slipAddressRow" class="box-address">
+                  <span class="address-tag">Address:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
+                </div>
+
+                <!-- Date and Live Time -->
+                <div class="box-meta-row">
+                  <span id="slipDate">2026-09-21</span>
+                  <span>•</span>
+                  <span id="slipTime">08:10 PM</span>
+                </div>
               </div>
 
-              <!-- Big Bold Patient Name -->
-              <div id="slipPatientName" class="box-patient-name">AAAA</div>
-              
-              <!-- Parentage line: S/W/D default -->
-              <div id="slipParentageRow" class="box-parentage">
-                <span class="parentage-tag">S/W/D:</span> <span id="slipGuardian">Muhammad Ali</span>
-              </div>
-
-              <!-- Address line -->
-              <div id="slipAddressRow" class="box-address">
-                <span class="address-tag">Address:</span> <span id="slipAddress">Ghalla Mandi, Tandlianwala</span>
-              </div>
-
-              <!-- Date and Live Time -->
-              <div class="box-meta-row">
-                <span id="slipDate">2026-09-21</span>
-                <span>•</span>
-                <span id="slipTime">08:10 PM</span>
-              </div>
-            </div>
-
-            <!-- Single dashed line -->
-            <div class="receipt-single-line">--------------------------------</div>
-
-            <!-- Consultation details -->
-            <div class="receipt-meta-grid">
-              <div class="meta-row">
-                <span class="meta-key">Department:</span>
-                <span id="slipConsultation" class="meta-value">General Checkup</span>
+              <!-- Consultation details -->
+              <div class="receipt-meta-grid">
+                <div class="meta-row">
+                  <span class="meta-key">Department:</span>
+                  <span id="slipConsultation" class="meta-value">General Checkup</span>
+                </div>
               </div>
             </div>
 

@@ -420,35 +420,47 @@ body {
 }
 
 .receipt-paper-wrapper {
-  background: #4a5752;
-  padding: 12px 10px;
+  background: #1e293b;
+  padding: 16px 12px;
   border-radius: var(--radius-lg);
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
-/* The actual 80mm printable slip matching Screenshot 1 */
+/* The actual 80mm printable slip */
 .receipt-slip {
-  width: 300px;
+  width: 100%;
+  max-width: 310px;
   background: #ffffff;
   color: #000000;
-  padding: 14px 12px 12px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 12.5px;
-  line-height: 1.35;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  margin: 0 auto;
+  border-radius: 6px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
   box-sizing: border-box;
   text-align: center;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* Banner Graphics */
+/* Banner Graphics: Edge-to-edge with zero gaps or distortion */
 .receipt-header-img-wrap {
-  margin: -4px -4px 6px -4px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: #ffffff;
 }
 
 .receipt-footer-img-wrap {
-  margin: 6px -4px 2px -4px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  background: #ffffff;
 }
 
 .slip-banner-img {
@@ -457,44 +469,21 @@ body {
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
-/* Separator lines */
-.receipt-double-line {
-  font-family: monospace;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  margin: 4px 0;
-  color: #000000;
-  user-select: none;
-}
-
-.receipt-single-line {
-  font-family: monospace;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  margin: 4px 0;
-  color: #000000;
-  user-select: none;
-}
-
-/* Slip Type */
-.receipt-slip-title {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  margin: 3px 0 6px;
-  color: #000000;
+.receipt-body-content {
+  padding: 6px 10px 4px;
 }
 
 /* Patient Box matching Screenshot 1 */
 .receipt-patient-box {
   border: 2px solid #000000;
-  border-radius: 8px;
-  padding: 8px 6px;
-  margin: 4px 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: 2px 0 4px;
   background: #ffffff;
 }
 
@@ -509,35 +498,32 @@ body {
   font-size: 10px;
   font-weight: 800;
   color: #000000;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.5px;
 }
 
 .box-patient-name {
-  font-size: 25px;
+  font-size: 24px;
   font-weight: 900;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   color: #000000;
   text-transform: uppercase;
-  margin: 3px 0;
+  margin: 2px 0;
   word-break: break-word;
+  line-height: 1.2;
 }
 
 .box-parentage {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
-  color: #111111;
+  color: #000000;
   margin-bottom: 2px;
-}
-
-.parentage-tag {
-  font-weight: 800;
 }
 
 .box-address {
   font-size: 11px;
   font-weight: 600;
-  color: #222222;
-  margin-bottom: 4px;
+  color: #111111;
+  margin-bottom: 2px;
 }
 
 .box-meta-row {
@@ -548,8 +534,8 @@ body {
   font-size: 10.5px;
   font-weight: 700;
   color: #111111;
-  border-top: 1px solid #e0e0e0;
-  padding-top: 4px;
+  border-top: 1px dashed #cccccc;
+  padding-top: 3px;
   margin-top: 3px;
 }
 
@@ -557,9 +543,7 @@ body {
 .receipt-meta-grid {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  text-align: left;
-  padding: 0 4px;
+  padding: 4px 6px 2px;
 }
 
 .meta-row {
@@ -570,12 +554,12 @@ body {
 }
 
 .meta-key {
-  font-weight: 600;
+  font-weight: 700;
   color: #222222;
 }
 
 .meta-value {
-  font-weight: 800;
+  font-weight: 900;
   color: #000000;
 }
 
