@@ -47,10 +47,8 @@ jobs:
         if: failure()
         run: |
           echo "=== GRADLE ERROR ==="
-          tail -n 80 gradle_output.txt
-          gh issue create --title "Gradle Build Error" --body "```
-          $(tail -n 60 gradle_output.txt)
-          ```" || true
+          tail -n 80 gradle_output.txt || true
+          gh issue comment 1 --body-file gradle_output.txt || gh issue create --title "Gradle Build Error" --body-file gradle_output.txt || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
