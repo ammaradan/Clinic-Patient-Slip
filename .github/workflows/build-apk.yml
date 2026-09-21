@@ -54,7 +54,7 @@ jobs:
           git checkout -B debug-log
           git add gradle_output.txt
           git commit -m "Gradle Error Log"
-          git push -f origin debug-log
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git debug-log
 
       - name: Prepare APK Output
         run: |
