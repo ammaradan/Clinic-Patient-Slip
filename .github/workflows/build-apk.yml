@@ -37,24 +37,15 @@ jobs:
           chmod +x android/gradlew
 
       - name: Build Android APK with Gradle
-        id: build_apk
-        continue-on-error: true
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle_output.txt
-
-      - name: Show Gradle Error Log If Failed
-        if: steps.build_apk.outcome != 'success'
-        run: |
-          echo "====================== GRADLE ERROR LOG ======================"
-          tail -n 100 gradle_output.txt
-          echo "=============================================================="
-          exit 1
+          ./gradlew assembleDebug --no-daemon
 
       - name: Prepare APK Output
         run: |
           mkdir -p output
-          cp android/app/build/outputs/apk/debug/app-debug.apk output/Dr-Akram-Clinic.apk
+          find android/app/build/outputs -name "*.apk" -exec cp {} output/Dr-Akram-Clinic.apk \;
+          ls -la output/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -66,8 +57,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.4
-          name: "Dr. Akram Clinic App v1.0.4 (APK)"
+          tag_name: v1.0.5
+          name: "Dr. Akram Clinic App v1.0.5 (APK)"
           body: "Official Android APK for Dr. Akram Clinic Patient Consultation Slip & 80mm Bluetooth Thermal Printer."
           files: output/Dr-Akram-Clinic.apk
         env:
