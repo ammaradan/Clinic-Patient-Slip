@@ -188,13 +188,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateBtUI(status, isConnected) {
+    if (btStatusText) {
+      btStatusText.textContent = `Bluetooth: ${status}`;
+    }
+    if (btnConnectBt) {
+      btnConnectBt.className = `bt-status-btn ${isConnected ? 'connected' : 'disconnected'}`;
+    }
+  }
+
   // --- Bluetooth Connection Button Handling ---
   btnConnectBt.addEventListener('click', async () => {
+    if (btPrinter.isNativeAndroid()) {
+      btPrinter.syncConnectionState(updateBtUI);
+    }
+
     if (btPrinter.isConnected) {
-      if (confirm('Bluetooth پرنٹر پہلے سے کنیکٹ ہے، کیا ڈسکنیکٹ کرنا چاہتے ہیں؟')) {
+      if (confirm(`Bluetooth پرنٹر (${btPrinter.deviceName || 'Thermal Printer'}) پہلے سے کنیکٹ ہے، کیا ڈسکنیکٹ کرنا چاہتے ہیں؟`)) {
         btPrinter.disconnect();
-        btStatusText.textContent = 'Bluetooth Printer: Disconnected (Tap to Connect)';
-        btnConnectBt.className = 'bt-status-btn disconnected';
+        updateBtUI('Disconnected (Tap to Connect)', false);
         showToast('پرنٹر ڈسکنیکٹ کر دیا گیا');
       }
       return;
@@ -209,10 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. If running inside Chrome browser with Web Bluetooth
     if (btPrinter.isWebBluetooth()) {
       try {
-        await btPrinter.connectWeb((status, isConnected) => {
-          btStatusText.textContent = `Bluetooth: ${status}`;
-          btnConnectBt.className = `bt-status-btn ${isConnected ? 'connected' : 'disconnected'}`;
-        });
+        await btPrinter.connectWeb(updateBtUI);
         showToast('پرنٹر کنیکٹ ہو گیا! Ready to print.');
       } catch (err) {
         console.warn('Bluetooth connect error:', err);
@@ -270,6 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
         address,
         reason
       };
+    }
+
+    // Check and sync Bluetooth connection before printing
+    if (!btPrinter.isConnected && btPrinter.isNativeAndroid()) {
+      btPrinter.syncConnectionState(updateBtUI);
     }
 
     // Try direct high-speed Bluetooth printing if connected
@@ -339,8 +353,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // --- Automatic Bluetooth Startup Sync & Auto-Reconnect ---
+  function initBluetoothConnection() {
+    if (btPrinter.isNativeAndroid()) {
+      // 1. Check if already connected in Android bridge (e.g. after page refresh)
+      const isAlreadyConnected = btPrinter.syncConnectionState(updateBtUI);
+      if (isAlreadyConnected) {
+        console.log('Bluetooth session restored from native bridge:', btPrinter.deviceName);
+      } else {
+        // 2. Auto-reconnect to last paired printer
+        const lastAddr = localStorage.getItem('last_printer_address');
+        if (lastAddr) {
+          updateBtUI('Auto-connecting...', false);
+          btPrinter.autoConnectLastPrinter(updateBtUI).then(success => {
+            if (success) {
+              showToast(`پرنٹر ${btPrinter.deviceName} خود بخود کنیکٹ ہو گیا!`, 2500);
+            } else {
+              updateBtUI('Disconnected (Tap to Connect)', false);
+            }
+          });
+        }
+      }
+
+      // 3. Continuously sync connection state every 3 seconds to keep UI accurate
+      setInterval(() => {
+        btPrinter.syncConnectionState(updateBtUI);
+      }, 3000);
+    }
+  }
+
   // Initial setup
   updateDateTime();
   syncLivePreview();
+  initBluetoothConnection();
   setInterval(updateDateTime, 30000); // refresh time every 30s
 });

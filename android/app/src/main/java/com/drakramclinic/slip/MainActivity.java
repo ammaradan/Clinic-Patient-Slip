@@ -17,7 +17,7 @@ public class MainActivity extends BridgeActivity {
         // Also inject into WebView directly
         if (this.bridge != null && this.bridge.getWebView() != null) {
             this.bridge.getWebView().addJavascriptInterface(
-                new AndroidBluetoothBridge(this),
+                AndroidBluetoothBridge.getInstance(this),
                 "AndroidBluetooth"
             );
         }

@@ -57,9 +57,62 @@ class BluetoothPrinter {
     }
   }
 
+  syncConnectionState(onStatusChange) {
+    if (this.isNativeAndroid()) {
+      try {
+        const connected = !!(window.AndroidBluetooth.isConnected && window.AndroidBluetooth.isConnected());
+        if (connected) {
+          const devName = (window.AndroidBluetooth.getConnectedDeviceName && window.AndroidBluetooth.getConnectedDeviceName()) || 'Thermal Printer';
+          const devAddr = (window.AndroidBluetooth.getConnectedDeviceAddress && window.AndroidBluetooth.getConnectedDeviceAddress()) || '';
+          this.isConnected = true;
+          this.deviceName = devName;
+          if (devAddr) localStorage.setItem('last_printer_address', devAddr);
+          if (devName) localStorage.setItem('last_printer_name', devName);
+          onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+          return true;
+        } else {
+          if (this.isConnected) {
+            this.isConnected = false;
+            this.deviceName = '';
+            onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+          }
+          return false;
+        }
+      } catch (e) {
+        console.warn('syncConnectionState error:', e);
+        return false;
+      }
+    }
+    return this.isConnected;
+  }
+
+  async autoConnectLastPrinter(onStatusChange) {
+    if (this.isNativeAndroid()) {
+      if (this.syncConnectionState(onStatusChange)) {
+        return true;
+      }
+      const lastAddr = localStorage.getItem('last_printer_address');
+      const lastName = localStorage.getItem('last_printer_name') || 'Thermal Printer';
+      if (lastAddr) {
+        try {
+          return await this.connectNative(lastAddr, lastName, onStatusChange);
+        } catch (e) {
+          console.log('Background auto-connect failed:', e.message);
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
   async connectNative(address, name, onStatusChange) {
     if (!this.isNativeAndroid()) {
       throw new Error('Native Bluetooth interface is not available');
+    }
+
+    if (this.isConnected && this.deviceName === (name || address)) {
+      onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+      return true;
     }
 
     onStatusChange && onStatusChange('Connecting to ' + (name || address) + '...', false);
@@ -165,17 +218,46 @@ class BluetoothPrinter {
       }
 
       this.isConnected = true;
+      this.startWebHeartbeat();
       onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
       return true;
 
     } catch (err) {
       this.isConnected = false;
+      this.stopWebHeartbeat();
       onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
       throw err;
     }
   }
 
+  startWebHeartbeat() {
+    this.stopWebHeartbeat();
+    this.webHeartbeatTimer = setInterval(async () => {
+      if (this.isConnected && this.characteristic) {
+        try {
+          const ping = new Uint8Array([0x10, 0x04, 0x01]);
+          if (this.characteristic.properties.writeWithoutResponse) {
+            await this.characteristic.writeValueWithoutResponse(ping);
+          } else if (this.characteristic.properties.write) {
+            await this.characteristic.writeValue(ping);
+          }
+        } catch (e) {
+          console.warn('Web Bluetooth heartbeat lost:', e);
+          this.disconnect();
+        }
+      }
+    }, 20000);
+  }
+
+  stopWebHeartbeat() {
+    if (this.webHeartbeatTimer) {
+      clearInterval(this.webHeartbeatTimer);
+      this.webHeartbeatTimer = null;
+    }
+  }
+
   disconnect() {
+    this.stopWebHeartbeat();
     if (this.isNativeAndroid()) {
       window.AndroidBluetooth.disconnect();
     } else if (this.device && this.device.gatt) {
