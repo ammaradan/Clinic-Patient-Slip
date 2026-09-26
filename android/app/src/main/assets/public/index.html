@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=1.2.2">
+  <link rel="stylesheet" href="style.css?v=1.2.3">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <meta name="theme-color" content="#072a24">
@@ -203,19 +203,12 @@
 
     </main>
 
-    <!-- Discreet App Footer with Admin Access Link -->
+    <!-- Discreet App Footer (Tapping clinic name opens secret admin portal) -->
     <footer class="app-footer">
-      <div class="footer-left">
+      <button type="button" id="btnOpenAdminAuth" class="footer-secret-btn" aria-label="Dr. Akram Clinic" title="Dr. Akram Clinic • Tandlianwala">
         <span class="footer-status-pill"></span>
         <span class="footer-clinic-text">Dr. Akram Clinic • Tandlianwala</span>
-      </div>
-      <div class="footer-right">
-        <!-- Subtle Discreet Admin Button (Hidden from regular desk operators) -->
-        <button id="btnOpenAdminAuth" class="btn-admin-secret" title="ریکارڈز و ایڈمن پورٹل" aria-label="Admin Portal">
-          <span class="lock-icon">🔒</span>
-          <span class="secret-text">ریکارڈز</span>
-        </button>
-      </div>
+      </button>
     </footer>
 
     <!-- Admin Authentication Modal (Password: 26627) -->
@@ -510,14 +503,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.2.2"></script>
-  <script src="html2canvas.min.js?v=1.2.2"></script>
-  <script src="escpos.js?v=1.2.2"></script>
-  <script src="app.js?v=1.2.2"></script>
+  <script src="graphics.js?v=1.2.3"></script>
+  <script src="html2canvas.min.js?v=1.2.3"></script>
+  <script src="escpos.js?v=1.2.3"></script>
+  <script src="app.js?v=1.2.3"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.2.2').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.2.3').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

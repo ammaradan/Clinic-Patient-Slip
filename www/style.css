@@ -886,8 +886,8 @@ body {
   margin-top: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
+  justify-content: flex-start;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-md);
@@ -896,10 +896,21 @@ body {
   color: var(--text-muted);
 }
 
-.footer-left {
-  display: flex;
+.footer-secret-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  margin: 0;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  transition: opacity 0.2s ease;
 }
 
 .footer-status-pill {
@@ -913,33 +924,13 @@ body {
 .footer-clinic-text {
   font-weight: 500;
   letter-spacing: 0.2px;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
 }
 
-/* Discreet Admin Secret Button */
-.btn-admin-secret {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #94a3b8;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.btn-admin-secret:hover {
+.footer-secret-btn:hover .footer-clinic-text,
+.footer-secret-btn:active .footer-clinic-text {
   color: var(--primary-teal);
-  background: rgba(11, 74, 65, 0.08);
-  border-color: rgba(11, 74, 65, 0.2);
-}
-
-.btn-admin-secret .lock-icon {
-  font-size: 12px;
-  opacity: 0.65;
 }
 
 /* ==========================================================================
