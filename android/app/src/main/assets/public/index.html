@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.2.2">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <meta name="theme-color" content="#072a24">
@@ -198,15 +198,277 @@
             <div class="receipt-footer-shukriya">* Shukriya *</div>
           </div>
 
-          <!-- Thermal paper cut guide -->
-          <div class="receipt-cut-line">
-            ✂ - - - - - - - - - - - - - - - - - -
-          </div>
-
         </div>
       </div>
 
     </main>
+
+    <!-- Discreet App Footer with Admin Access Link -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-status-pill"></span>
+        <span class="footer-clinic-text">Dr. Akram Clinic • Tandlianwala</span>
+      </div>
+      <div class="footer-right">
+        <!-- Subtle Discreet Admin Button (Hidden from regular desk operators) -->
+        <button id="btnOpenAdminAuth" class="btn-admin-secret" title="ریکارڈز و ایڈمن پورٹل" aria-label="Admin Portal">
+          <span class="lock-icon">🔒</span>
+          <span class="secret-text">ریکارڈز</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Admin Authentication Modal (Password: 26627) -->
+    <div id="adminAuthModal" class="admin-modal hidden">
+      <div class="modal-backdrop" id="adminAuthBackdrop"></div>
+      <div class="admin-modal-card">
+        <div class="admin-auth-header">
+          <div class="auth-icon-badge">🔒</div>
+          <h3>ایڈمن لاگ ان (Admin Verification)</h3>
+          <p>ٹوکن ریکارڈز دیکھنے کے لیے خفیہ پاس ورڈ درج کریں</p>
+        </div>
+
+        <form id="adminAuthForm" class="admin-auth-form" onsubmit="return false;">
+          <div class="pin-input-container">
+            <input 
+              type="password" 
+              id="adminPinInput" 
+              class="admin-pin-input" 
+              placeholder="•••••" 
+              maxlength="10" 
+              inputmode="numeric" 
+              autocomplete="off"
+            >
+          </div>
+          <div id="adminPinError" class="auth-error-msg hidden">
+            ⚠️ غلط پاس ورڈ! برائے مہربانی درست پن درج کریں۔
+          </div>
+
+          <!-- Quick Touchpad for Mobile / Tablet -->
+          <div class="pin-keypad">
+            <button type="button" class="pin-key" data-num="1">1</button>
+            <button type="button" class="pin-key" data-num="2">2</button>
+            <button type="button" class="pin-key" data-num="3">3</button>
+            <button type="button" class="pin-key" data-num="4">4</button>
+            <button type="button" class="pin-key" data-num="5">5</button>
+            <button type="button" class="pin-key" data-num="6">6</button>
+            <button type="button" class="pin-key" data-num="7">7</button>
+            <button type="button" class="pin-key" data-num="8">8</button>
+            <button type="button" class="pin-key" data-num="9">9</button>
+            <button type="button" class="pin-key pin-clear" id="btnPinClear">C</button>
+            <button type="button" class="pin-key" data-num="0">0</button>
+            <button type="button" class="pin-key pin-backspace" id="btnPinBackspace">⌫</button>
+          </div>
+
+          <div class="auth-actions">
+            <button type="button" id="btnCancelAuth" class="btn-auth-cancel">منسوخ (Cancel)</button>
+            <button type="submit" id="btnSubmitAuth" class="btn-auth-submit">لاگ ان کریں (Unlock)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Records & Tokens Dashboard Modal -->
+    <div id="adminRecordsModal" class="admin-modal hidden">
+      <div class="modal-backdrop" id="adminRecordsBackdrop"></div>
+      <div class="records-modal-card">
+        
+        <!-- Header -->
+        <div class="records-modal-header">
+          <div class="records-header-info">
+            <div class="records-badge-icon">📋</div>
+            <div>
+              <h2>ٹوکن و مریضوں کے ریکارڈز</h2>
+              <p>Dr. Akram Clinic • Daily Consultation & Revenue Records</p>
+            </div>
+          </div>
+          <div class="records-header-actions">
+            <button type="button" id="btnOpenChangePin" class="btn-record-action pin-action" title="ایڈمن پاس ورڈ تبدیل کریں">
+              <span>🔑 پاس ورڈ</span>
+            </button>
+            <button type="button" id="btnPrintDailySummary" class="btn-record-action print" title="بلوٹوتھ پرنٹر پر سمری پرنٹ کریں">
+              <span>🖨️ سمری پرنٹ</span>
+            </button>
+            <button type="button" id="btnExportCsv" class="btn-record-action export" title="ایکسل فائل ڈاؤن لوڈ کریں">
+              <span>📥 ایکسل/CSV</span>
+            </button>
+            <button type="button" id="btnCloseAdminModal" class="btn-record-close" title="بند کریں">
+              <span>✕</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Date Filter & Quick Switch -->
+        <div class="records-controls-bar">
+          <div class="date-controls-group">
+            <span class="ctrl-label">📅 تاریخ منتخب کریں:</span>
+            <div class="date-quick-btns">
+              <button type="button" class="date-quick-btn active" id="btnDateToday">آج (Today)</button>
+              <button type="button" class="date-quick-btn" id="btnDateYesterday">گزشتہ روز</button>
+            </div>
+            <input type="date" id="adminDatePicker" class="admin-date-picker">
+          </div>
+
+          <div class="status-filter-group">
+            <button type="button" class="status-filter-btn active" data-filter="all">سب (<span id="countFilterAll">0</span>)</button>
+            <button type="button" class="status-filter-btn" data-filter="waiting">زیرِ انتظار (<span id="countFilterWaiting">0</span>)</button>
+            <button type="button" class="status-filter-btn" data-filter="served">اندر آ گئے (<span id="countFilterServed">0</span>)</button>
+          </div>
+        </div>
+
+        <!-- Summary KPI Cards -->
+        <div class="records-stats-grid">
+          <div class="stat-card stat-total">
+            <div class="stat-icon">🎫</div>
+            <div class="stat-details">
+              <span class="stat-label">کل جاری شدہ ٹوکن</span>
+              <span class="stat-val" id="statTotalTokens">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-served">
+            <div class="stat-icon">✅</div>
+            <div class="stat-details">
+              <span class="stat-label">اندر آ گئے / مکمل</span>
+              <span class="stat-val" id="statServedTokens">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-waiting">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-details">
+              <span class="stat-label">زیرِ انتظار مریض</span>
+              <span class="stat-val" id="statWaitingTokens">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-fee">
+            <div class="stat-icon">💰</div>
+            <div class="stat-details">
+              <span class="stat-label">کل فیس / ریکوری</span>
+              <span class="stat-val" id="statTotalFee">Rs. 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar & Day Purge -->
+        <div class="records-sub-bar">
+          <div class="records-search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="adminSearchInput" 
+              class="records-search-input" 
+              placeholder="مریض کا نام، ولدیت یا پتہ تلاش کریں..."
+            >
+          </div>
+          <button type="button" id="btnClearDayData" class="btn-clear-day" title="منتخب دن کا تمام ڈیٹا ڈیلیٹ کریں">
+            <span>🗑️ منتخب دن کا ڈیٹا صاف کریں</span>
+          </button>
+        </div>
+
+        <!-- Records Table / Cards List -->
+        <div class="records-content-scroll">
+          <div id="recordsTableWrapper" class="records-table-container">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>ٹوکن #</th>
+                  <th>وقت</th>
+                  <th>مریض کا نام</th>
+                  <th>نسبت (S/W/D)</th>
+                  <th>پتہ</th>
+                  <th>معائنہ کی قسم</th>
+                  <th>فیس (Rs.)</th>
+                  <th>حالت (Status)</th>
+                  <th>کارروائی</th>
+                </tr>
+              </thead>
+              <tbody id="recordsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="recordsEmptyState" class="records-empty-state hidden">
+            <div class="empty-icon">📭</div>
+            <h3>اس تاریخ کا کوئی ٹوکن ریکارڈ موجود نہیں ہے</h3>
+            <p>جب پرچی پرنٹ کی جائے گی تو اس کا ریکارڈ خود بخود یہاں درج ہو جائے گا۔</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="records-modal-footer">
+          <div class="footer-summary-text">
+            <span>منتخب تاریخ: <strong id="selectedDateDisplay">--</strong></span>
+            <span> • </span>
+            <span>کل مریض: <strong id="selectedTotalDisplay">0</strong></span>
+          </div>
+          <button type="button" id="btnLockAdmin" class="btn-lock-exit">
+            🔒 لاگ آؤٹ اور لاک کریں
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Change Admin PIN Modal -->
+    <div id="changePinModal" class="admin-modal hidden">
+      <div class="modal-backdrop" id="changePinBackdrop"></div>
+      <div class="admin-modal-card">
+        <div class="admin-auth-header">
+          <div class="auth-icon-badge">🔑</div>
+          <h3>ایڈمن پاس ورڈ تبدیل کریں</h3>
+          <p>Change Admin Access Password</p>
+        </div>
+
+        <form id="changePinForm" class="admin-auth-form" onsubmit="return false;">
+          <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+            <label style="font-size: 12px; font-weight: 700; color: #475569;">موجودہ پاس ورڈ (Current PIN)</label>
+            <input 
+              type="password" 
+              id="currentPinInput" 
+              class="form-input" 
+              placeholder="موجودہ پاس ورڈ (پہلے 26627)" 
+              required
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+            <label style="font-size: 12px; font-weight: 700; color: #475569;">نیا پاس ورڈ (New PIN)</label>
+            <input 
+              type="password" 
+              id="newPinInput" 
+              class="form-input" 
+              placeholder="نیا پاس ورڈ درج کریں" 
+              required
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+            <label style="font-size: 12px; font-weight: 700; color: #475569;">نئے پاس ورڈ کی تصدیق (Confirm PIN)</label>
+            <input 
+              type="password" 
+              id="confirmPinInput" 
+              class="form-input" 
+              placeholder="دوبارہ نیا پاس ورڈ درج کریں" 
+              required
+              autocomplete="off"
+            >
+          </div>
+
+          <div id="changePinError" class="auth-error-msg hidden"></div>
+
+          <div class="auth-actions" style="margin-top: 14px;">
+            <button type="button" id="btnCancelChangePin" class="btn-auth-cancel">منسوخ</button>
+            <button type="submit" id="btnSaveNewPin" class="btn-auth-submit">محفوظ کریں</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Bluetooth Device Picker Modal (for Native Android APK) -->
     <div id="btDeviceModal" class="bt-modal hidden">
@@ -248,14 +510,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.1.6"></script>
-  <script src="html2canvas.min.js?v=1.1.6"></script>
-  <script src="escpos.js?v=1.1.6"></script>
-  <script src="app.js?v=1.1.6"></script>
+  <script src="graphics.js?v=1.2.2"></script>
+  <script src="html2canvas.min.js?v=1.2.2"></script>
+  <script src="escpos.js?v=1.2.2"></script>
+  <script src="app.js?v=1.2.2"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.1.6').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.2.2').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

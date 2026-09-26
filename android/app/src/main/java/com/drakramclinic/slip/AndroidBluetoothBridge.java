@@ -386,12 +386,14 @@ public class AndroidBluetoothBridge {
                             outputStream.flush();
                             Log.d(TAG, "Heartbeat keep-alive ping sent");
                         } catch (Exception e) {
-                            Log.w(TAG, "Heartbeat failed, connection dropped: " + e.getMessage());
-                            disconnectInternal();
+                            Log.w(TAG, "Heartbeat ping warning: " + e.getMessage());
+                            if (currentSocket == null || !currentSocket.isConnected()) {
+                                disconnectInternal();
+                            }
                         }
                     }
                 }
-            }, 20, 20, TimeUnit.SECONDS);
+            }, 25, 25, TimeUnit.SECONDS);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start heartbeat scheduler", e);
         }

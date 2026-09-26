@@ -143,53 +143,125 @@ class BluetoothPrinter {
     });
   }
 
-  async connectWeb(onStatusChange) {
-    if (!this.isWebBluetooth()) {
-      throw new Error('Web Bluetooth is not supported in this browser. Please open in Google Chrome on Android or PC.');
+  async autoConnectWeb(onStatusChange) {
+    if (!this.isWebBluetooth() || !navigator.bluetooth.getDevices) {
+      return false;
+    }
+    if (localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
+      return false;
     }
 
     try {
-      onStatusChange && onStatusChange('Connecting...', false);
+      const devices = await navigator.bluetooth.getDevices();
+      if (!devices || devices.length === 0) {
+        return false;
+      }
 
-      this.device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: this.POS_SERVICES
-      });
+      const savedDeviceId = localStorage.getItem('web_last_device_id');
+      let targetDevice = devices[0];
+      if (savedDeviceId) {
+        const found = devices.find(d => d.id === savedDeviceId);
+        if (found) targetDevice = found;
+      }
 
-      this.deviceName = this.device.name || '80mm Bluetooth Printer';
+      onStatusChange && onStatusChange(`Connecting to ${targetDevice.name || 'Printer'}...`, false);
+      return await this.setupWebDevice(targetDevice, onStatusChange);
+    } catch (err) {
+      console.warn('Web Bluetooth auto-connect error:', err);
+      return false;
+    }
+  }
 
-      this.device.addEventListener('gattserverdisconnected', () => {
-        this.isConnected = false;
-        this.characteristic = null;
+  async setupWebDevice(device, onStatusChange) {
+    this.device = device;
+    this.deviceName = device.name || '80mm Bluetooth Printer';
+    localStorage.setItem('web_last_device_id', device.id);
+    localStorage.setItem('last_printer_name', this.deviceName);
+    localStorage.removeItem('bluetooth_explicit_disconnect');
+
+    const handleDisconnect = async () => {
+      this.isConnected = false;
+      this.characteristic = null;
+      this.stopWebHeartbeat();
+
+      // Only attempt auto-reconnect if the user didn't explicitly tap Disconnect
+      if (localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
         onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
-      });
+        return;
+      }
 
-      this.server = await this.device.gatt.connect();
-
-      // Find write characteristic (prefer writeWithoutResponse for high speed)
-      for (const serviceUuid of this.POS_SERVICES) {
+      onStatusChange && onStatusChange(`Reconnecting to ${this.deviceName}...`, false);
+      
+      // Auto-reconnect with retries
+      let attempts = 0;
+      const retryConnect = async () => {
+        if (this.isConnected || localStorage.getItem('bluetooth_explicit_disconnect') === 'true') return;
+        attempts++;
         try {
-          const service = await this.server.getPrimaryService(serviceUuid);
-          const chars = await service.getCharacteristics();
+          if (this.device && this.device.gatt) {
+            await this.device.gatt.connect();
+            await this.discoverGattCharacteristics();
+            this.isConnected = true;
+            this.startWebHeartbeat();
+            onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+            console.log('Bluetooth auto-reconnected successfully!');
+            return;
+          }
+        } catch (reErr) {
+          if (attempts < 6) {
+            setTimeout(retryConnect, attempts * 2000);
+          } else {
+            onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+          }
+        }
+      };
+
+      setTimeout(retryConnect, 1500);
+    };
+
+    // Remove any previous listener before re-attaching
+    this.device.removeEventListener('gattserverdisconnected', this._gattDisconnectHandler);
+    this._gattDisconnectHandler = handleDisconnect;
+    this.device.addEventListener('gattserverdisconnected', this._gattDisconnectHandler);
+
+    this.server = await this.device.gatt.connect();
+    await this.discoverGattCharacteristics();
+
+    this.isConnected = true;
+    this.startWebHeartbeat();
+    onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+    return true;
+  }
+
+  async discoverGattCharacteristics() {
+    this.characteristic = null;
+    if (!this.server) return;
+
+    // Find write characteristic (prefer writeWithoutResponse for high speed)
+    for (const serviceUuid of this.POS_SERVICES) {
+      try {
+        const service = await this.server.getPrimaryService(serviceUuid);
+        const chars = await service.getCharacteristics();
+        for (const char of chars) {
+          if (char.properties.writeWithoutResponse) {
+            this.characteristic = char;
+            break;
+          }
+        }
+        if (!this.characteristic) {
           for (const char of chars) {
-            if (char.properties.writeWithoutResponse) {
+            if (char.properties.write) {
               this.characteristic = char;
               break;
             }
           }
-          if (!this.characteristic) {
-            for (const char of chars) {
-              if (char.properties.write) {
-                this.characteristic = char;
-                break;
-              }
-            }
-          }
-          if (this.characteristic) break;
-        } catch (e) {}
-      }
+        }
+        if (this.characteristic) break;
+      } catch (e) {}
+    }
 
-      if (!this.characteristic) {
+    if (!this.characteristic) {
+      try {
         const services = await this.server.getPrimaryServices();
         for (const service of services) {
           try {
@@ -211,17 +283,28 @@ class BluetoothPrinter {
             if (this.characteristic) break;
           } catch (e) {}
         }
-      }
+      } catch (e2) {}
+    }
 
-      if (!this.characteristic) {
-        throw new Error('Printer connected, but writable print channel was not found.');
-      }
+    if (!this.characteristic) {
+      throw new Error('Printer connected, but writable print channel was not found.');
+    }
+  }
 
-      this.isConnected = true;
-      this.startWebHeartbeat();
-      onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
-      return true;
+  async connectWeb(onStatusChange) {
+    if (!this.isWebBluetooth()) {
+      throw new Error('Web Bluetooth is not supported in this browser. Please open in Google Chrome on Android or PC.');
+    }
 
+    try {
+      onStatusChange && onStatusChange('Connecting...', false);
+
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: this.POS_SERVICES
+      });
+
+      return await this.setupWebDevice(device, onStatusChange);
     } catch (err) {
       this.isConnected = false;
       this.stopWebHeartbeat();
@@ -233,20 +316,16 @@ class BluetoothPrinter {
   startWebHeartbeat() {
     this.stopWebHeartbeat();
     this.webHeartbeatTimer = setInterval(async () => {
-      if (this.isConnected && this.characteristic) {
-        try {
-          const ping = new Uint8Array([0x10, 0x04, 0x01]);
-          if (this.characteristic.properties.writeWithoutResponse) {
-            await this.characteristic.writeValueWithoutResponse(ping);
-          } else if (this.characteristic.properties.write) {
-            await this.characteristic.writeValue(ping);
+      if (this.isConnected && this.device && this.device.gatt) {
+        if (!this.device.gatt.connected) {
+          console.warn('GATT disconnected detected in heartbeat check');
+          this.isConnected = false;
+          if (this._gattDisconnectHandler) {
+            this._gattDisconnectHandler();
           }
-        } catch (e) {
-          console.warn('Web Bluetooth heartbeat lost:', e);
-          this.disconnect();
         }
       }
-    }, 20000);
+    }, 15000);
   }
 
   stopWebHeartbeat() {
@@ -257,6 +336,7 @@ class BluetoothPrinter {
   }
 
   disconnect() {
+    localStorage.setItem('bluetooth_explicit_disconnect', 'true');
     this.stopWebHeartbeat();
     if (this.isNativeAndroid()) {
       window.AndroidBluetooth.disconnect();
@@ -392,6 +472,77 @@ class BluetoothPrinter {
     bytes.push(0x1D, 0x56, 0x42, 0x00);
 
     // High-speed smooth streaming
+    await this.sendRawData(bytes);
+    return true;
+  }
+
+  /**
+   * Print Daily Token & Revenue Summary on 80mm Thermal Printer
+   */
+  async printDailySummary(summary) {
+    if (!this.isConnected) {
+      throw new Error('پرنٹر کنیکٹ نہیں ہے۔ پہلے پرنٹر کنیکٹ کریں۔');
+    }
+
+    const bytes = [];
+
+    // Initialize printer: ESC @
+    bytes.push(0x1B, 0x40);
+
+    // Center alignment: ESC a 1
+    bytes.push(0x1B, 0x61, 0x01);
+
+    // Header: DR AKRAM CLINIC (Double width & height + Bold)
+    bytes.push(0x1D, 0x21, 0x11, 0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, "DR AKRAM CLINIC\n");
+
+    // Normal size, normal text
+    bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
+    this.appendAscii(bytes, "Ghalla Mandi, Tandlianwala\n");
+    this.appendAscii(bytes, "================================\n");
+
+    // Title: Bold on
+    bytes.push(0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, "DAILY TOKEN & SUMMARY REPORT\n");
+    bytes.push(0x1B, 0x45, 0x00);
+    this.appendAscii(bytes, "--------------------------------\n");
+
+    // Left alignment for stats: ESC a 0
+    bytes.push(0x1B, 0x61, 0x00);
+    this.appendAscii(bytes, `Date: ${summary.date || ''}   Time: ${summary.time || ''}\n`);
+    this.appendAscii(bytes, "--------------------------------\n");
+    this.appendAscii(bytes, `Total Tokens Issued : ${summary.totalCount}\n`);
+    this.appendAscii(bytes, `Served (In Clinic)  : ${summary.servedCount}\n`);
+    this.appendAscii(bytes, `Waiting (Pending)   : ${summary.waitingCount}\n`);
+    
+    // Total Fee Collection emphasized
+    bytes.push(0x1B, 0x45, 0x01);
+    this.appendAscii(bytes, `Total Collection    : Rs. ${Number(summary.totalAmount || 0).toLocaleString()}\n`);
+    bytes.push(0x1B, 0x45, 0x00);
+    this.appendAscii(bytes, "================================\n");
+
+    // Token records breakdown
+    if (summary.tokens && summary.tokens.length > 0) {
+      this.appendAscii(bytes, "TOK# TIME   PATIENT        STATUS\n");
+      this.appendAscii(bytes, "--------------------------------\n");
+      summary.tokens.forEach(t => {
+        const num = `#${t.tokenNo}`.padEnd(5, ' ');
+        const time = (t.time || '').replace(/\s*(AM|PM)/i, '').substring(0, 5).padEnd(6, ' ');
+        const name = (t.patientName || '').substring(0, 12).padEnd(13, ' ');
+        const st = (t.status === 'served') ? 'SERVED' : 'WAIT';
+        this.appendAscii(bytes, `${num}${time}${name}${st}\n`);
+      });
+      this.appendAscii(bytes, "--------------------------------\n");
+    }
+
+    // Center alignment for footer: ESC a 1
+    bytes.push(0x1B, 0x61, 0x01);
+    this.appendAscii(bytes, "* Confidential Admin Report *\n");
+
+    // 2-line feed & cut
+    bytes.push(0x1B, 0x64, 0x02);
+    bytes.push(0x1D, 0x56, 0x42, 0x00);
+
     await this.sendRawData(bytes);
     return true;
   }
