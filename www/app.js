@@ -483,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 5. Save all merged records back to local storage
       saveAllRecords(allMerged);
       updateCloudStatusUI('synced');
+      renderRecentTokens();
 
       if (notifyUser) {
         showToast(`کلاؤڈ سنک مکمل! (${allMerged.length} کل ریکارڈز)`, 2500);
@@ -608,6 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         date: dateStr,
         time: timeStr
       });
+      renderRecentTokens();
     }
 
     // Check and sync Bluetooth connection before printing
@@ -681,6 +683,133 @@ document.addEventListener('DOMContentLoaded', () => {
       handlePrint(false);
     }
   });
+
+  // ==========================================================================
+  // RECENT TOKENS QUICK REFERENCE (MAIN PAGE - LAST 10 TOKENS)
+  // ==========================================================================
+  const recentTokensList = document.getElementById('recentTokensList');
+  const recentEmptyState = document.getElementById('recentEmptyState');
+  const recentTokensCount = document.getElementById('recentTokensCount');
+  const tokenDetailModal = document.getElementById('tokenDetailModal');
+  const tokenDetailBackdrop = document.getElementById('tokenDetailBackdrop');
+  const btnModalClose = document.getElementById('btnModalClose');
+  const btnModalCloseX = document.getElementById('btnModalCloseX');
+  const btnModalReprint = document.getElementById('btnModalReprint');
+  const modalTokenNo = document.getElementById('modalTokenNo');
+  const modalPatientName = document.getElementById('modalPatientName');
+  const modalDateTime = document.getElementById('modalDateTime');
+  const modalGuardian = document.getElementById('modalGuardian');
+  const modalAddress = document.getElementById('modalAddress');
+  const modalReason = document.getElementById('modalReason');
+  const modalFee = document.getElementById('modalFee');
+  const modalStatus = document.getElementById('modalStatus');
+
+  let currentDetailRecord = null;
+
+  function openTokenDetailModal(rec) {
+    if (!rec || !tokenDetailModal) return;
+    currentDetailRecord = rec;
+
+    if (modalTokenNo) modalTokenNo.textContent = `#${rec.tokenNo || '--'}`;
+    if (modalPatientName) modalPatientName.textContent = (rec.patientName || 'PATIENT').toUpperCase();
+    if (modalDateTime) modalDateTime.textContent = `${rec.date || ''} • ${rec.time || ''}`;
+    if (modalGuardian) modalGuardian.textContent = rec.guardian || '-';
+    if (modalAddress) modalAddress.textContent = rec.address || '-';
+    if (modalReason) modalReason.textContent = rec.reason || 'General Checkup';
+    if (modalFee) modalFee.textContent = `Rs. ${Number(rec.amount || 500).toLocaleString()}`;
+    if (modalStatus) {
+      modalStatus.textContent = rec.status === 'served' ? '✅ اندر آ گیا (Served)' : '⏳ زیرِ انتظار (Waiting)';
+      modalStatus.style.color = rec.status === 'served' ? '#15803d' : '#d97706';
+    }
+
+    tokenDetailModal.classList.remove('hidden');
+  }
+
+  function closeTokenDetailModal() {
+    if (tokenDetailModal) {
+      tokenDetailModal.classList.add('hidden');
+    }
+    currentDetailRecord = null;
+  }
+
+  if (btnModalClose) btnModalClose.addEventListener('click', closeTokenDetailModal);
+  if (btnModalCloseX) btnModalCloseX.addEventListener('click', closeTokenDetailModal);
+  if (tokenDetailBackdrop) tokenDetailBackdrop.addEventListener('click', closeTokenDetailModal);
+
+  if (btnModalReprint) {
+    btnModalReprint.addEventListener('click', () => {
+      if (currentDetailRecord) {
+        const target = currentDetailRecord;
+        closeTokenDetailModal();
+        reprintSpecificToken(target);
+      }
+    });
+  }
+
+  function renderRecentTokens() {
+    if (!recentTokensList) return;
+
+    const allRecords = getAllRecords();
+    const todayStr = getTodayDateString();
+
+    // Filter for today's tokens
+    const todayRecords = allRecords.filter(r => r.date === todayStr);
+
+    // Sort newest token first: largest tokenNo or latest timestamp
+    todayRecords.sort((a, b) => {
+      const numA = Number(a.tokenNo) || 0;
+      const numB = Number(b.tokenNo) || 0;
+      if (numB !== numA) return numB - numA;
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
+
+    // Take at most 10 recent tokens (older ones cycle out from this quick list)
+    const recent = todayRecords.slice(0, 10);
+
+    if (recentTokensCount) {
+      recentTokensCount.textContent = `${recent.length} / 10`;
+    }
+
+    if (recent.length === 0) {
+      recentTokensList.innerHTML = '';
+      if (recentEmptyState) recentEmptyState.classList.remove('hidden');
+      return;
+    }
+
+    if (recentEmptyState) recentEmptyState.classList.add('hidden');
+    recentTokensList.innerHTML = '';
+
+    recent.forEach(rec => {
+      const item = document.createElement('div');
+      item.className = 'recent-token-item';
+      item.setAttribute('data-id', rec.id);
+
+      const isUrgent = (rec.reason || '').toLowerCase().includes('urgent');
+      const guardianText = rec.guardian ? `${rec.guardian} • ` : '';
+      const addressText = rec.address || '-';
+
+      item.innerHTML = `
+        <div class="recent-token-left">
+          <span class="recent-tok-pill">#${rec.tokenNo}</span>
+          <div class="recent-patient-meta">
+            <span class="recent-name">${rec.patientName}</span>
+            <span class="recent-sub">${guardianText}${addressText}</span>
+          </div>
+        </div>
+        <div class="recent-token-right">
+          <span class="recent-time">${rec.time || ''}</span>
+          <span class="recent-tag ${isUrgent ? 'urgent' : ''}">${rec.reason || 'Checkup'}</span>
+          <button type="button" class="btn-quick-view" title="تفصیل دیکھیں">ℹ️</button>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        openTokenDetailModal(rec);
+      });
+
+      recentTokensList.appendChild(item);
+    });
+  }
 
   // ==========================================================================
   // ADMIN AUTHENTICATION (PASSWORD: 26627)
@@ -1021,6 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderAdminDashboard() {
+    renderRecentTokens();
     const allRecords = getAllRecords();
     const dayRecords = allRecords.filter(r => r.date === currentSelectedDate);
 
@@ -1468,6 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
   syncLivePreview();
   initBluetoothConnection();
   updateCloudStatusUI();
+  renderRecentTokens();
   syncAllRecordsWithCloud(false);
 
   // Background recurring timers
