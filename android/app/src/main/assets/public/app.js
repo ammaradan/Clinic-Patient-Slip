@@ -239,9 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================================================
-  // TOKEN RECORDS STORAGE & ADMIN ENGINE (Offline-First)
+  // TOKEN RECORDS STORAGE & MULTI-DEVICE CLOUD SYNC ENGINE
   // ==========================================================================
   const RECORDS_STORAGE_KEY = 'dr_akram_token_records_v2';
+  const CLOUD_DB_KEY = 'dr_akram_cloud_db_url';
+  const DEFAULT_CLOUD_DB_URL = 'https://dr-akram-clinic-fca63-default-rtdb.firebaseio.com';
   const DEFAULT_ADMIN_PIN = '26627';
 
   function getAdminPin() {
@@ -250,6 +252,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setAdminPin(newPin) {
     localStorage.setItem('admin_custom_pin', newPin);
+  }
+
+  function getCloudDbUrl() {
+    const raw = localStorage.getItem(CLOUD_DB_KEY) || DEFAULT_CLOUD_DB_URL;
+    return raw.trim().replace(/\/+$/, '');
+  }
+
+  function setCloudDbUrl(url) {
+    if (!url || !url.trim()) {
+      localStorage.setItem(CLOUD_DB_KEY, DEFAULT_CLOUD_DB_URL);
+    } else {
+      localStorage.setItem(CLOUD_DB_KEY, url.trim().replace(/\/+$/, ''));
+    }
+    updateCloudStatusUI();
   }
 
   function getTodayDateString(d = new Date()) {
@@ -277,20 +293,237 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Cloud Sync UI State Update ---
+  function updateCloudStatusUI(statusOverride = null) {
+    const dbUrl = getCloudDbUrl();
+    const btnIndicator = document.getElementById('btnCloudSyncIndicator');
+    const statusText = document.getElementById('cloudStatusText');
+    const detailBox = document.getElementById('cloudCurrentStatusBox');
+    const detailText = document.getElementById('cloudStatusDetailText');
+
+    let currentStatus = statusOverride;
+    if (!currentStatus) {
+      if (!dbUrl) {
+        currentStatus = 'local';
+      } else if (!navigator.onLine) {
+        currentStatus = 'offline';
+      } else {
+        currentStatus = 'synced';
+      }
+    }
+
+    if (btnIndicator && statusText) {
+      btnIndicator.className = `cloud-status-btn ${currentStatus}`;
+      if (currentStatus === 'synced') {
+        statusText.textContent = 'Cloud: Synced';
+      } else if (currentStatus === 'syncing') {
+        statusText.textContent = 'Cloud: Syncing...';
+      } else if (currentStatus === 'offline') {
+        statusText.textContent = 'Cloud: Offline';
+      } else {
+        statusText.textContent = 'Cloud: Setup';
+      }
+    }
+
+    if (detailBox && detailText) {
+      detailBox.className = `cloud-status-box ${currentStatus}`;
+      if (currentStatus === 'synced') {
+        detailText.textContent = `✅ کلاؤڈ سنک فعال ہے (${dbUrl})`;
+      } else if (currentStatus === 'syncing') {
+        detailText.textContent = '⏳ ڈیٹا کلاؤڈ کے ساتھ سنک ہو رہا ہے...';
+      } else if (currentStatus === 'offline') {
+        detailText.textContent = '⚠️ انٹرنیٹ منقطع ہے۔ ڈیٹا لوکل محفوظ ہے، انٹرنیٹ آنے پر سنک ہو جائے گا۔';
+      } else {
+        detailText.textContent = '⚙️ کلاؤڈ سنک سیٹ اپ نہیں ہے۔ نیچے Firebase Database URL درج کریں۔';
+      }
+    }
+  }
+
+  // Push single record to cloud database
+  async function pushRecordToCloud(record) {
+    const dbUrl = getCloudDbUrl();
+    if (!dbUrl || !navigator.onLine) return false;
+
+    try {
+      const url = `${dbUrl}/records/${record.id}.json`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...record, synced: true, updatedAt: record.updatedAt || Date.now() })
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('Cloud sync push failed (offline):', err);
+      return false;
+    }
+  }
+
+  // Update token status in cloud database (waiting / served)
+  async function updateRecordStatusInCloud(recordId, newStatus) {
+    const dbUrl = getCloudDbUrl();
+    if (!dbUrl || !navigator.onLine) return false;
+
+    try {
+      const url = `${dbUrl}/records/${recordId}.json`;
+      await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, updatedAt: Date.now() })
+      });
+      return true;
+    } catch (e) {
+      console.warn('Cloud status update failed:', e);
+      return false;
+    }
+  }
+
+  // Delete record from cloud database
+  async function deleteRecordFromCloud(recordId) {
+    const dbUrl = getCloudDbUrl();
+    if (!dbUrl || !navigator.onLine) return false;
+
+    try {
+      const url = `${dbUrl}/records/${recordId}.json`;
+      await fetch(url, { method: 'DELETE' });
+      return true;
+    } catch (e) {
+      console.warn('Cloud delete failed:', e);
+      return false;
+    }
+  }
+
+  // Delete all records of a specific day from cloud
+  async function deleteDayRecordsFromCloud(dateStr) {
+    const dbUrl = getCloudDbUrl();
+    if (!dbUrl || !navigator.onLine) return false;
+
+    try {
+      const res = await fetch(`${dbUrl}/records.json`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data) return true;
+
+      const keysToDelete = Object.keys(data).filter(k => data[k] && data[k].date === dateStr);
+      await Promise.all(keysToDelete.map(k => fetch(`${dbUrl}/records/${k}.json`, { method: 'DELETE' })));
+      return true;
+    } catch (e) {
+      console.warn('Cloud day delete failed:', e);
+      return false;
+    }
+  }
+
+  // Bidirectional Synchronization with Cloud
+  let isSyncing = false;
+  async function syncAllRecordsWithCloud(notifyUser = false) {
+    const dbUrl = getCloudDbUrl();
+    if (!dbUrl) {
+      updateCloudStatusUI('local');
+      if (notifyUser) {
+        showToast('برائے مہربانی پہلے کلاؤڈ ڈیٹا بیس کا URL درج کریں۔', 3000);
+      }
+      return;
+    }
+
+    if (!navigator.onLine) {
+      updateCloudStatusUI('offline');
+      if (notifyUser) {
+        showToast('انٹرنیٹ منقطع ہے۔ ڈیٹا لوکل محفوظ رہے گا۔', 2500);
+      }
+      return;
+    }
+
+    if (isSyncing) return;
+    isSyncing = true;
+    updateCloudStatusUI('syncing');
+
+    try {
+      // 1. Fetch all records from cloud database
+      const res = await fetch(`${dbUrl}/records.json`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const cloudObj = await res.json() || {};
+
+      // 2. Map existing local records
+      const localRecords = getAllRecords();
+      const recordsMap = new Map();
+      localRecords.forEach(r => {
+        if (r && r.id) recordsMap.set(r.id, r);
+      });
+
+      // 3. Merge cloud records into local map
+      let updatedCount = 0;
+      Object.keys(cloudObj).forEach(key => {
+        const cloudRec = cloudObj[key];
+        if (!cloudRec || !cloudRec.id) return;
+
+        const localRec = recordsMap.get(cloudRec.id);
+        if (!localRec) {
+          recordsMap.set(cloudRec.id, { ...cloudRec, synced: true });
+          updatedCount++;
+        } else {
+          const cloudTime = cloudRec.updatedAt || cloudRec.timestamp || 0;
+          const localTime = localRec.updatedAt || localRec.timestamp || 0;
+          if (cloudTime > localTime) {
+            recordsMap.set(cloudRec.id, { ...cloudRec, synced: true });
+            updatedCount++;
+          }
+        }
+      });
+
+      // 4. Find local records not yet uploaded to cloud
+      const allMerged = Array.from(recordsMap.values());
+      const pendingUploads = allMerged.filter(r => !r.synced);
+
+      if (pendingUploads.length > 0) {
+        await Promise.all(pendingUploads.map(async (rec) => {
+          const ok = await pushRecordToCloud(rec);
+          if (ok) rec.synced = true;
+        }));
+      }
+
+      // 5. Save all merged records back to local storage
+      saveAllRecords(allMerged);
+      updateCloudStatusUI('synced');
+
+      if (notifyUser) {
+        showToast(`کلاؤڈ سنک مکمل! (${allMerged.length} کل ریکارڈز)`, 2500);
+      }
+
+      // If Admin Records Dashboard is open, refresh view
+      if (adminRecordsModal && !adminRecordsModal.classList.contains('hidden')) {
+        renderAdminDashboard();
+      }
+    } catch (err) {
+      console.warn('Sync failed:', err);
+      updateCloudStatusUI('offline');
+      if (notifyUser) {
+        showToast(`کلاؤڈ سنک ایرر: ${err.message}`, 3500);
+      }
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  // Calculate sequential token number
+  function getNextSequentialTokenNo(records, targetDate) {
+    const todayRecords = records.filter(r => r.date === targetDate);
+    if (todayRecords.length === 0) return 1;
+    const maxNo = todayRecords.reduce((max, r) => Math.max(max, Number(r.tokenNo) || 0), 0);
+    return maxNo + 1;
+  }
+
   function addTokenRecord(patientData) {
     const records = getAllRecords();
     const targetDate = patientData.date || getTodayDateString();
     
-    // Calculate today's sequential token number
-    const todayRecords = records.filter(r => r.date === targetDate);
-    const nextTokenNo = todayRecords.length + 1;
+    // Calculate today's sequential token number avoiding collision
+    const nextTokenNo = getNextSequentialTokenNo(records, targetDate);
 
     // Calculate consultation fee (Rs. 1000 for Urgent, Rs. 500 for General Checkup)
     const isUrgent = (patientData.reason || '').toLowerCase().includes('urgent');
     const defaultAmount = isUrgent ? 1000 : 500;
 
     const newRecord = {
-      id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       tokenNo: nextTokenNo,
       date: targetDate,
       time: patientData.time || slipTime.textContent.trim(),
@@ -300,11 +533,23 @@ document.addEventListener('DOMContentLoaded', () => {
       reason: patientData.reason || 'General Checkup',
       amount: defaultAmount,
       status: 'waiting', // 'waiting' or 'served'
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      updatedAt: Date.now(),
+      synced: false
     };
 
     records.push(newRecord);
     saveAllRecords(records);
+
+    // Push immediately to cloud in background
+    pushRecordToCloud(newRecord).then(success => {
+      if (success) {
+        newRecord.synced = true;
+        saveAllRecords(records);
+        updateCloudStatusUI('synced');
+      }
+    });
+
     return newRecord;
   }
 
@@ -649,6 +894,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     adminRecordsModal.classList.remove('hidden');
     renderAdminDashboard();
+
+    // Trigger fresh cloud sync immediately on opening admin dashboard
+    syncAllRecordsWithCloud(false);
   }
 
   function closeAdminRecordsModal() {
@@ -662,6 +910,14 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('ایڈمن سیشن لاک کر دیا گیا');
   });
   if (adminRecordsBackdrop) adminRecordsBackdrop.addEventListener('click', closeAdminRecordsModal);
+
+  // Manual sync button in admin records header
+  const btnManualSyncRecords = document.getElementById('btnManualSyncRecords');
+  if (btnManualSyncRecords) {
+    btnManualSyncRecords.addEventListener('click', () => {
+      syncAllRecordsWithCloud(true);
+    });
+  }
 
   // Date switchers
   if (btnDateToday) {
@@ -851,16 +1107,24 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
       `;
 
-      // Status toggle button listener
+      // Status toggle button listener (Syncs with Cloud!)
       const toggleBtn = tr.querySelector('.btn-status-toggle');
       toggleBtn.addEventListener('click', () => {
         const records = getAllRecords();
         const item = records.find(r => r.id === rec.id);
         if (item) {
           item.status = (item.status === 'served') ? 'waiting' : 'served';
+          item.updatedAt = Date.now();
+          item.synced = false;
           saveAllRecords(records);
           renderAdminDashboard();
           showToast(item.status === 'served' ? `ٹوکن #${item.tokenNo} اندر آ گیا (Served)!` : `ٹوکن #${item.tokenNo} واپس زیرِ انتظار!`, 2000);
+          updateRecordStatusInCloud(item.id, item.status).then(ok => {
+            if (ok) {
+              item.synced = true;
+              saveAllRecords(records);
+            }
+          });
         }
       });
 
@@ -872,7 +1136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      // Delete record button listener
+      // Delete record button listener (Syncs with Cloud!)
       const delBtn = tr.querySelector('.btn-del-record');
       delBtn.addEventListener('click', () => {
         if (confirm(`کیا آپ ٹوکن #${rec.tokenNo} (${rec.patientName}) کا ریکارڈ ڈیلیٹ کرنا چاہتے ہیں؟`)) {
@@ -881,6 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
           saveAllRecords(records);
           renderAdminDashboard();
           showToast('ریکارڈ ڈیلیٹ کر دیا گیا');
+          deleteRecordFromCloud(rec.id);
         }
       });
 
@@ -888,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Clear Day Data
+  // Clear Day Data (Syncs with Cloud!)
   if (btnClearDayData) {
     btnClearDayData.addEventListener('click', () => {
       const allRecords = getAllRecords();
@@ -903,6 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveAllRecords(remaining);
         renderAdminDashboard();
         showToast(`تاریخ ${currentSelectedDate} کا تمام ڈیٹا صاف کر دیا گیا!`);
+        deleteDayRecordsFromCloud(currentSelectedDate);
       }
     });
   }
@@ -992,6 +1258,154 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
+  // CLOUD SYNC SETTINGS MODAL & BACKUP/RESTORE
+  // ==========================================================================
+  const cloudSyncModal = document.getElementById('cloudSyncModal');
+  const cloudSyncBackdrop = document.getElementById('cloudSyncBackdrop');
+  const btnCloseCloudModal = document.getElementById('btnCloseCloudModal');
+  const btnOpenCloudSync = document.getElementById('btnOpenCloudSync');
+  const btnCloudSyncIndicator = document.getElementById('btnCloudSyncIndicator');
+  const cloudDbUrlInput = document.getElementById('cloudDbUrlInput');
+  const btnSaveCloudConfig = document.getElementById('btnSaveCloudConfig');
+  const btnTestCloudConnection = document.getElementById('btnTestCloudConnection');
+  const btnSyncNowModal = document.getElementById('btnSyncNowModal');
+  const btnDownloadJsonBackup = document.getElementById('btnDownloadJsonBackup');
+  const inputImportJsonBackup = document.getElementById('inputImportJsonBackup');
+
+  function openCloudSyncModal() {
+    if (!cloudSyncModal) return;
+    if (cloudDbUrlInput) {
+      cloudDbUrlInput.value = getCloudDbUrl();
+    }
+    updateCloudStatusUI();
+    cloudSyncModal.classList.remove('hidden');
+  }
+
+  function closeCloudSyncModal() {
+    if (!cloudSyncModal) return;
+    cloudSyncModal.classList.add('hidden');
+  }
+
+  if (btnOpenCloudSync) btnOpenCloudSync.addEventListener('click', openCloudSyncModal);
+  if (btnCloudSyncIndicator) btnCloudSyncIndicator.addEventListener('click', openCloudSyncModal);
+  if (btnCloseCloudModal) btnCloseCloudModal.addEventListener('click', closeCloudSyncModal);
+  if (cloudSyncBackdrop) cloudSyncBackdrop.addEventListener('click', closeCloudSyncModal);
+
+  // Test Cloud Database connection
+  if (btnTestCloudConnection) {
+    btnTestCloudConnection.addEventListener('click', async () => {
+      const url = (cloudDbUrlInput ? cloudDbUrlInput.value : getCloudDbUrl()).trim();
+      if (!url) {
+        showToast('برائے مہربانی پہلے ڈیٹا بیس URL درج کریں۔');
+        return;
+      }
+
+      showToast('کلاؤڈ کنکشن چیک کیا جا رہا ہے...');
+      try {
+        const cleanUrl = url.replace(/\/+$/, '');
+        const res = await fetch(`${cleanUrl}/records.json?shallow=true`, { cache: 'no-store' });
+        if (res.ok) {
+          showToast('✅ کلاؤڈ ڈیٹا بیس سے رابطہ کامیاب رہا!');
+          updateCloudStatusUI('synced');
+        } else {
+          showToast(`⚠️ سرور ایرر: HTTP ${res.status}`);
+        }
+      } catch (err) {
+        showToast(`❌ کنکشن ناکام: ${err.message}`, 4000);
+      }
+    });
+  }
+
+  // Save Cloud Database URL
+  if (btnSaveCloudConfig) {
+    btnSaveCloudConfig.addEventListener('click', async () => {
+      const url = (cloudDbUrlInput ? cloudDbUrlInput.value : '').trim();
+      setCloudDbUrl(url);
+
+      if (url) {
+        showToast('کلاؤڈ سیٹنگز محفوظ ہو گئیں! ڈیٹا سنک ہو رہا ہے...');
+        await syncAllRecordsWithCloud(true);
+      } else {
+        showToast('کلاؤڈ سنک بند کر دیا گیا۔ اب ڈیٹا صرف اس موبائل پر رہے گا۔');
+        updateCloudStatusUI('local');
+      }
+    });
+  }
+
+  // Sync Now button inside modal
+  if (btnSyncNowModal) {
+    btnSyncNowModal.addEventListener('click', () => {
+      syncAllRecordsWithCloud(true);
+    });
+  }
+
+  // Download Full JSON Backup
+  if (btnDownloadJsonBackup) {
+    btnDownloadJsonBackup.addEventListener('click', () => {
+      const records = getAllRecords();
+      if (records.length === 0) {
+        showToast('بیک اپ کے لیے کوئی ریکارڈ موجود نہیں ہے۔');
+        return;
+      }
+      const dataStr = JSON.stringify(records, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Dr_Akram_Clinic_Tokens_Backup_${getTodayDateString()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('بیک اپ فائل ڈاؤن لوڈ ہو گئی!');
+    });
+  }
+
+  // Restore JSON Backup file
+  if (inputImportJsonBackup) {
+    inputImportJsonBackup.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (!Array.isArray(imported)) {
+            showToast('⚠️ غلط فارمیٹ! درست ٹوکن بیک اپ فائل منتخب کریں۔', 3500);
+            return;
+          }
+
+          const local = getAllRecords();
+          const map = new Map();
+          local.forEach(r => {
+            if (r && r.id) map.set(r.id, r);
+          });
+
+          let newRecordsCount = 0;
+          imported.forEach(item => {
+            if (item && item.id) {
+              if (!map.has(item.id)) newRecordsCount++;
+              map.set(item.id, { ...item, synced: false });
+            }
+          });
+
+          const merged = Array.from(map.values());
+          saveAllRecords(merged);
+          renderAdminDashboard();
+          showToast(`✅ ${newRecordsCount} نئے ریکارڈز بحال ہو گئے!`, 3000);
+          syncAllRecordsWithCloud(false);
+        } catch (err) {
+          showToast('⚠️ فائل پڑھنے میں نقص: ' + err.message, 3500);
+        } finally {
+          inputImportJsonBackup.value = '';
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // ==========================================================================
   // AUTOMATIC BLUETOOTH RECONNECT & STARTUP SYNC
   // ==========================================================================
   function initBluetoothConnection() {
@@ -1031,19 +1445,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Auto-check connection when browser tab or screen becomes visible again
+  // Auto-check connection and sync when browser tab or screen becomes visible again
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       if (!btPrinter.isConnected && localStorage.getItem('bluetooth_explicit_disconnect') !== 'true') {
         initBluetoothConnection();
       }
+      syncAllRecordsWithCloud(false);
     }
+  });
+
+  // Online / Offline network status listeners
+  window.addEventListener('online', () => {
+    updateCloudStatusUI();
+    syncAllRecordsWithCloud(false);
+  });
+
+  window.addEventListener('offline', () => {
+    updateCloudStatusUI('offline');
   });
 
   // Initial setup
   updateDateTime();
   syncLivePreview();
   initBluetoothConnection();
+  updateCloudStatusUI();
+  syncAllRecordsWithCloud(false);
+
+  // Background recurring timers
   setInterval(updateDateTime, 30000); // refresh time every 30s
+  setInterval(() => syncAllRecordsWithCloud(false), 15000); // sync cloud records every 15s
 });
 

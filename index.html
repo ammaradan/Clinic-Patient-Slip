@@ -27,11 +27,16 @@
         <span class="clinic-title-top">Dr. Akram Clinic • Tandlianwala</span>
       </div>
       
-      <!-- Bluetooth Printer Status Bar -->
-      <div class="bt-toolbar">
-        <button id="btnConnectBt" class="bt-status-btn disconnected" title="Connect 80mm Bluetooth Thermal Printer">
+      <!-- Connectivity Toolbar: Cloud Sync & Bluetooth Printer -->
+      <div class="header-status-toolbar">
+        <button type="button" id="btnCloudSyncIndicator" class="cloud-status-btn local" title="Cloud Synchronization Status (Tap for Settings)">
+          <span class="cloud-icon">☁️</span>
+          <span id="cloudStatusText">Cloud: Local Only</span>
+        </button>
+
+        <button type="button" id="btnConnectBt" class="bt-status-btn disconnected" title="Connect 80mm Bluetooth Thermal Printer">
           <span class="bt-icon">📶</span>
-          <span id="btStatusText">Bluetooth Printer: Disconnected (Tap to Connect)</span>
+          <span id="btStatusText">Bluetooth Printer: Disconnected</span>
         </button>
       </div>
     </header>
@@ -276,6 +281,12 @@
             </div>
           </div>
           <div class="records-header-actions">
+            <button type="button" id="btnManualSyncRecords" class="btn-record-action sync" title="کلاؤڈ سے تازہ ترین ریکارڈز حاصل کریں">
+              <span>🔄 سنک</span>
+            </button>
+            <button type="button" id="btnOpenCloudSync" class="btn-record-action cloud" title="کلاؤڈ سنک کی ترتیبات">
+              <span>☁️ کلاؤڈ</span>
+            </button>
             <button type="button" id="btnOpenChangePin" class="btn-record-action pin-action" title="ایڈمن پاس ورڈ تبدیل کریں">
               <span>🔑 پاس ورڈ</span>
             </button>
@@ -497,20 +508,107 @@
       </div>
     </div>
 
+    <!-- Cloud Database Synchronization Settings Modal -->
+    <div id="cloudSyncModal" class="admin-modal hidden">
+      <div class="modal-backdrop" id="cloudSyncBackdrop"></div>
+      <div class="admin-modal-card cloud-modal-card">
+        <div class="admin-auth-header">
+          <div class="auth-icon-badge cloud-icon-badge">☁️</div>
+          <h3>کلاؤڈ سنک کی ترتیبات</h3>
+          <p>Multi-Device Cloud Synchronization & Real-time Records</p>
+        </div>
+
+        <div class="cloud-config-body">
+          <!-- Current Live Status -->
+          <div id="cloudCurrentStatusBox" class="cloud-status-box local">
+            <span class="status-indicator-dot"></span>
+            <span id="cloudStatusDetailText">حالت: صرف اس فون پر محفوظ ہو رہا ہے (Local Storage)</span>
+          </div>
+
+          <form id="cloudSyncForm" onsubmit="return false;">
+            <div class="form-group" style="text-align: right; margin-bottom: 12px;">
+              <label style="font-size: 12.5px; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">
+                Firebase Realtime Database URL:
+              </label>
+              <input 
+                type="url" 
+                id="cloudDbUrlInput" 
+                class="form-input" 
+                placeholder="https://dr-akram-clinic-fca63-default-rtdb.firebaseio.com" 
+                value="https://dr-akram-clinic-fca63-default-rtdb.firebaseio.com"
+                dir="ltr"
+                style="font-size: 13px; font-family: monospace;"
+                autocomplete="off"
+              >
+              <span class="cloud-helper-note">
+                💡 تمام موبائلز اور کمپیوٹرز پر یہی ایک URL درج کریں تاکہ ڈیٹا لائیو آپس میں مل سکے۔
+              </span>
+            </div>
+
+            <div class="cloud-actions-row">
+              <button type="button" id="btnTestCloudConnection" class="btn-cloud-test">
+                🧪 ٹیسٹ
+              </button>
+              <button type="button" id="btnSaveCloudConfig" class="btn-cloud-save">
+                💾 محفوظ کریں
+              </button>
+              <button type="button" id="btnSyncNowModal" class="btn-cloud-sync-now">
+                🔄 ابھی سنک کریں
+              </button>
+            </div>
+          </form>
+
+          <!-- Easy Instructions Card -->
+          <div class="cloud-guide-card">
+            <div class="guide-title">
+              <span>📖 آسان سیٹ اپ گائیڈ (صرف 1 منٹ کا کام):</span>
+            </div>
+            <ol class="guide-steps">
+              <li>گوگل پر <strong>console.firebase.google.com</strong> کھولیں۔</li>
+              <li><strong>Add project</strong> پر کلک کر کے نام <em>Dr Akram Clinic</em> رکھ کر Create کریں۔</li>
+              <li>مینو سے <strong>Build &gt; Realtime Database</strong> میں جا کر <strong>Create Database</strong> دبائیں۔</li>
+              <li>رولز میں <strong>Start in test mode</strong> منتخب کریں، اوپر دیا گیا ڈیٹا بیس URL کاپی کر کے یہاں پیسٹ کریں۔</li>
+            </ol>
+          </div>
+
+          <!-- Offline / Emergency Backup & Restore -->
+          <div class="backup-restore-section">
+            <div class="backup-label">ایمرجنسی بیک اپ / فائل ٹرانسفر (Offline Backup):</div>
+            <div class="backup-btn-group">
+              <button type="button" id="btnDownloadJsonBackup" class="btn-backup-action">
+                📤 بیک اپ ڈاؤن لوڈ (JSON)
+              </button>
+              <label class="btn-backup-action import-label">
+                📥 بیک اپ فائل سے ڈیٹا بحال کریں
+                <input type="file" id="inputImportJsonBackup" accept=".json" style="display: none;">
+              </label>
+            </div>
+          </div>
+
+          <div class="auth-actions" style="margin-top: 14px;">
+            <button type="button" id="btnCloseCloudModal" class="btn-auth-cancel" style="width: 100%;">
+              بند کریں (Close)
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.2.3"></script>
-  <script src="html2canvas.min.js?v=1.2.3"></script>
-  <script src="escpos.js?v=1.2.3"></script>
-  <script src="app.js?v=1.2.3"></script>
+  <script src="graphics.js?v=1.3.0"></script>
+  <script src="html2canvas.min.js?v=1.3.0"></script>
+  <script src="escpos.js?v=1.3.0"></script>
+  <script src="app.js?v=1.3.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.2.3').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.3.0').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

@@ -37,6 +37,11 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Only handle GET requests for same-origin static assets; let cloud API requests go direct to network
+  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   e.respondWith(
     fetch(e.request)
       .then((networkRes) => {
