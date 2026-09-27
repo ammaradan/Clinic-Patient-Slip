@@ -1264,7 +1264,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cloudSyncBackdrop = document.getElementById('cloudSyncBackdrop');
   const btnCloseCloudModal = document.getElementById('btnCloseCloudModal');
   const btnOpenCloudSync = document.getElementById('btnOpenCloudSync');
-  const btnCloudSyncIndicator = document.getElementById('btnCloudSyncIndicator');
   const cloudDbUrlInput = document.getElementById('cloudDbUrlInput');
   const btnSaveCloudConfig = document.getElementById('btnSaveCloudConfig');
   const btnTestCloudConnection = document.getElementById('btnTestCloudConnection');
@@ -1287,7 +1286,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (btnOpenCloudSync) btnOpenCloudSync.addEventListener('click', openCloudSyncModal);
-  if (btnCloudSyncIndicator) btnCloudSyncIndicator.addEventListener('click', openCloudSyncModal);
   if (btnCloseCloudModal) btnCloseCloudModal.addEventListener('click', closeCloudSyncModal);
   if (cloudSyncBackdrop) cloudSyncBackdrop.addEventListener('click', closeCloudSyncModal);
 
