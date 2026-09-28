@@ -243,7 +243,7 @@
           <p>ٹوکن ریکارڈز دیکھنے کے لیے خفیہ پاس ورڈ درج کریں</p>
         </div>
 
-        <form id="adminAuthForm" class="admin-auth-form" onsubmit="return false;">
+        <form id="adminAuthForm" class="admin-auth-form">
           <div class="pin-input-container">
             <input 
               type="password" 
@@ -254,6 +254,7 @@
               inputmode="numeric" 
               autocomplete="off"
             >
+            <button type="button" id="btnTogglePinVisibility" class="btn-toggle-pin" title="پاس ورڈ دیکھیں / چھپائیں">👁️</button>
           </div>
           <div id="adminPinError" class="auth-error-msg hidden">
             ⚠️ غلط پاس ورڈ! برائے مہربانی درست پن درج کریں۔
@@ -278,6 +279,12 @@
           <div class="auth-actions">
             <button type="button" id="btnCancelAuth" class="btn-auth-cancel">منسوخ (Cancel)</button>
             <button type="submit" id="btnSubmitAuth" class="btn-auth-submit">لاگ ان کریں (Unlock)</button>
+          </div>
+
+          <div class="pin-reset-wrapper">
+            <button type="button" id="btnResetPinDefault" class="btn-auth-reset">
+              🔄 پن ری سیٹ کریں (Reset PIN to 26627)
+            </button>
           </div>
         </form>
       </div>
@@ -667,14 +674,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.3.1"></script>
-  <script src="html2canvas.min.js?v=1.3.1"></script>
-  <script src="escpos.js?v=1.3.1"></script>
-  <script src="app.js?v=1.3.1"></script>
+  <script src="graphics.js?v=1.3.2"></script>
+  <script src="html2canvas.min.js?v=1.3.2"></script>
+  <script src="escpos.js?v=1.3.2"></script>
+  <script src="app.js?v=1.3.2"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.3.1').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.3.2').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

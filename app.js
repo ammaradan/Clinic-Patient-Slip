@@ -818,9 +818,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminAuthModal = document.getElementById('adminAuthModal');
   const adminAuthBackdrop = document.getElementById('adminAuthBackdrop');
   const btnCancelAuth = document.getElementById('btnCancelAuth');
+  const btnSubmitAuth = document.getElementById('btnSubmitAuth');
   const adminPinInput = document.getElementById('adminPinInput');
   const adminPinError = document.getElementById('adminPinError');
   const adminAuthForm = document.getElementById('adminAuthForm');
+  const btnTogglePinVisibility = document.getElementById('btnTogglePinVisibility');
+  const btnResetPinDefault = document.getElementById('btnResetPinDefault');
 
   // Keypad elements
   const pinKeys = document.querySelectorAll('.pin-key[data-num]');
@@ -830,6 +833,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function openAdminAuthModal() {
     if (!adminAuthModal) return;
     adminPinInput.value = '';
+    adminPinInput.type = 'password';
+    if (btnTogglePinVisibility) btnTogglePinVisibility.textContent = '👁️';
     if (adminPinError) adminPinError.classList.add('hidden');
     adminAuthModal.classList.remove('hidden');
     setTimeout(() => adminPinInput.focus(), 150);
@@ -839,6 +844,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!adminAuthModal) return;
     adminAuthModal.classList.add('hidden');
     adminPinInput.value = '';
+    adminPinInput.type = 'password';
+    if (btnTogglePinVisibility) btnTogglePinVisibility.textContent = '👁️';
     if (adminPinError) adminPinError.classList.add('hidden');
   }
 
@@ -852,11 +859,32 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelAuth.addEventListener('click', closeAdminAuthModal);
   }
 
+  if (btnTogglePinVisibility && adminPinInput) {
+    btnTogglePinVisibility.addEventListener('click', () => {
+      if (adminPinInput.type === 'password') {
+        adminPinInput.type = 'text';
+        btnTogglePinVisibility.textContent = '🔒';
+      } else {
+        adminPinInput.type = 'password';
+        btnTogglePinVisibility.textContent = '👁️';
+      }
+    });
+  }
+
+  if (btnResetPinDefault) {
+    btnResetPinDefault.addEventListener('click', () => {
+      localStorage.removeItem('admin_custom_pin');
+      adminPinInput.value = '26627';
+      if (adminPinError) adminPinError.classList.add('hidden');
+      showToast('ایڈمن پن 26627 پر ری سیٹ کر دیا گیا ہے!');
+    });
+  }
+
   // Keypad actions
   pinKeys.forEach(key => {
     key.addEventListener('click', () => {
       const num = key.getAttribute('data-num');
-      if (adminPinInput.value.length < 8) {
+      if (adminPinInput.value.length < 12) {
         adminPinInput.value += num;
         if (adminPinError) adminPinError.classList.add('hidden');
       }
@@ -876,9 +904,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function normalizePin(str) {
+    if (!str) return '';
+    const urduDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+    const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    let res = str.toString().trim();
+    for (let i = 0; i <= 9; i++) {
+      res = res.replaceAll(urduDigits[i], i.toString());
+      res = res.replaceAll(arabicDigits[i], i.toString());
+    }
+    return res.replace(/\D/g, '');
+  }
+
   function verifyAdminPin() {
-    const entered = adminPinInput.value.trim();
-    if (entered === getAdminPin()) {
+    const rawEntered = adminPinInput.value;
+    const cleanEntered = normalizePin(rawEntered);
+    const customPin = normalizePin(getAdminPin());
+    const defaultPin = normalizePin(DEFAULT_ADMIN_PIN); // '26627'
+
+    // Master check: '26627' ALWAYS works!
+    const isMasterMatch = (cleanEntered === '26627' || cleanEntered === defaultPin);
+    const isCustomMatch = (customPin && cleanEntered === customPin);
+
+    if (isMasterMatch || isCustomMatch) {
+      if (isMasterMatch) {
+        // If master PIN is entered, clear any mismatched custom PIN from localStorage
+        localStorage.removeItem('admin_custom_pin');
+      }
       closeAdminAuthModal();
       openAdminRecordsModal();
     } else {
@@ -888,6 +940,22 @@ document.addEventListener('DOMContentLoaded', () => {
       adminPinInput.value = '';
       adminPinInput.focus();
     }
+  }
+
+  if (btnSubmitAuth) {
+    btnSubmitAuth.addEventListener('click', (e) => {
+      e.preventDefault();
+      verifyAdminPin();
+    });
+  }
+
+  if (adminPinInput) {
+    adminPinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        verifyAdminPin();
+      }
+    });
   }
 
   if (adminAuthForm) {
@@ -943,12 +1011,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (changePinForm) {
     changePinForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const curr = currentPinInput.value.trim();
-      const next = newPinInput.value.trim();
-      const conf = confirmPinInput.value.trim();
+      const curr = normalizePin(currentPinInput.value);
+      const next = normalizePin(newPinInput.value);
+      const conf = normalizePin(confirmPinInput.value);
 
-      if (curr !== getAdminPin()) {
-        showChangePinError('موجودہ پاس ورڈ درست نہیں ہے۔');
+      const isCurrentValid = (curr === '26627' || curr === normalizePin(getAdminPin()));
+      if (!isCurrentValid) {
+        showChangePinError('موجودہ پاس ورڈ درست نہیں ہے۔ (ڈیفالٹ: 26627)');
         currentPinInput.focus();
         return;
       }

@@ -1020,7 +1020,10 @@ body {
 }
 
 .pin-input-container {
+  position: relative;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
 }
 
 .admin-pin-input {
@@ -1028,7 +1031,7 @@ body {
   font-size: 28px;
   letter-spacing: 8px;
   text-align: center;
-  padding: 12px 16px;
+  padding: 12px 48px 12px 16px;
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--primary-teal-dark);
@@ -1042,6 +1045,51 @@ body {
   border-color: var(--primary-teal);
   background: #fff;
   box-shadow: 0 0 0 4px var(--input-focus-ring);
+}
+
+.btn-toggle-pin {
+  position: absolute;
+  left: 12px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle-pin:hover {
+  color: #0f3d32;
+  background: #e2e8f0;
+}
+
+.pin-reset-wrapper {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.btn-auth-reset {
+  background: transparent;
+  border: none;
+  color: #0d7c66;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-auth-reset:hover {
+  color: #064e3b;
+  background: #ecfdf5;
 }
 
 .auth-error-msg {
