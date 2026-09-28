@@ -1,7 +1,7 @@
 /**
  * Service Worker for 100% Offline Support (Network-First strategy)
  */
-const CACHE_NAME = 'akram-clinic-slip-v7';
+const CACHE_NAME = 'akram-clinic-slip-v8';
 const ASSETS = [
   './',
   './index.html',

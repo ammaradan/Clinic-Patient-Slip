@@ -280,12 +280,6 @@
             <button type="button" id="btnCancelAuth" class="btn-auth-cancel">منسوخ (Cancel)</button>
             <button type="submit" id="btnSubmitAuth" class="btn-auth-submit">لاگ ان کریں (Unlock)</button>
           </div>
-
-          <div class="pin-reset-wrapper">
-            <button type="button" id="btnResetPinDefault" class="btn-auth-reset">
-              🔄 پن ری سیٹ کریں (Reset PIN to 26627)
-            </button>
-          </div>
         </form>
       </div>
     </div>
@@ -369,14 +363,6 @@
               <span class="stat-val" id="statWaitingTokens">0</span>
             </div>
           </div>
-
-          <div class="stat-card stat-fee">
-            <div class="stat-icon">💰</div>
-            <div class="stat-details">
-              <span class="stat-label">کل فیس / ریکوری</span>
-              <span class="stat-val" id="statTotalFee">Rs. 0</span>
-            </div>
-          </div>
         </div>
 
         <!-- Search Bar & Day Purge -->
@@ -407,7 +393,6 @@
                   <th>نسبت (S/W/D)</th>
                   <th>پتہ</th>
                   <th>معائنہ کی قسم</th>
-                  <th>فیس (Rs.)</th>
                   <th>حالت (Status)</th>
                   <th>کارروائی</th>
                 </tr>
@@ -648,10 +633,6 @@
             <strong class="detail-val" id="modalReason">General Checkup</strong>
           </div>
           <div class="detail-info-row">
-            <span class="detail-lbl">فیس (Fee):</span>
-            <strong class="detail-val fee-highlight" id="modalFee">Rs. 500</strong>
-          </div>
-          <div class="detail-info-row">
             <span class="detail-lbl">حالت (Status):</span>
             <strong class="detail-val" id="modalStatus">⏳ زیرِ انتظار (Waiting)</strong>
           </div>
@@ -674,14 +655,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.3.2"></script>
-  <script src="html2canvas.min.js?v=1.3.2"></script>
-  <script src="escpos.js?v=1.3.2"></script>
-  <script src="app.js?v=1.3.2"></script>
+  <script src="graphics.js?v=1.3.3"></script>
+  <script src="html2canvas.min.js?v=1.3.3"></script>
+  <script src="escpos.js?v=1.3.3"></script>
+  <script src="app.js?v=1.3.3"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.3.2').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.3.3').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

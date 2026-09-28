@@ -701,7 +701,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalGuardian = document.getElementById('modalGuardian');
   const modalAddress = document.getElementById('modalAddress');
   const modalReason = document.getElementById('modalReason');
-  const modalFee = document.getElementById('modalFee');
   const modalStatus = document.getElementById('modalStatus');
 
   let currentDetailRecord = null;
@@ -716,7 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalGuardian) modalGuardian.textContent = rec.guardian || '-';
     if (modalAddress) modalAddress.textContent = rec.address || '-';
     if (modalReason) modalReason.textContent = rec.reason || 'General Checkup';
-    if (modalFee) modalFee.textContent = `Rs. ${Number(rec.amount || 500).toLocaleString()}`;
     if (modalStatus) {
       modalStatus.textContent = rec.status === 'served' ? '✅ اندر آ گیا (Served)' : '⏳ زیرِ انتظار (Waiting)';
       modalStatus.style.color = rec.status === 'served' ? '#15803d' : '#d97706';
@@ -823,7 +821,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminPinError = document.getElementById('adminPinError');
   const adminAuthForm = document.getElementById('adminAuthForm');
   const btnTogglePinVisibility = document.getElementById('btnTogglePinVisibility');
-  const btnResetPinDefault = document.getElementById('btnResetPinDefault');
 
   // Keypad elements
   const pinKeys = document.querySelectorAll('.pin-key[data-num]');
@@ -871,15 +868,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnResetPinDefault) {
-    btnResetPinDefault.addEventListener('click', () => {
-      localStorage.removeItem('admin_custom_pin');
-      adminPinInput.value = '26627';
-      if (adminPinError) adminPinError.classList.add('hidden');
-      showToast('ایڈمن پن 26627 پر ری سیٹ کر دیا گیا ہے!');
-    });
-  }
-
   // Keypad actions
   pinKeys.forEach(key => {
     key.addEventListener('click', () => {
@@ -910,25 +898,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
     let res = str.toString().trim();
     for (let i = 0; i <= 9; i++) {
-      res = res.replaceAll(urduDigits[i], i.toString());
-      res = res.replaceAll(arabicDigits[i], i.toString());
+      res = res.replace(new RegExp(urduDigits[i], 'g'), i.toString());
+      res = res.replace(new RegExp(arabicDigits[i], 'g'), i.toString());
     }
     return res.replace(/\D/g, '');
   }
 
   function verifyAdminPin() {
-    const rawEntered = adminPinInput.value;
+    const rawEntered = (adminPinInput ? adminPinInput.value : '').trim();
     const cleanEntered = normalizePin(rawEntered);
     const customPin = normalizePin(getAdminPin());
-    const defaultPin = normalizePin(DEFAULT_ADMIN_PIN); // '26627'
+    const defaultPin = '26627';
 
     // Master check: '26627' ALWAYS works!
-    const isMasterMatch = (cleanEntered === '26627' || cleanEntered === defaultPin);
-    const isCustomMatch = (customPin && cleanEntered === customPin);
+    const isMasterMatch = (cleanEntered === defaultPin || rawEntered === defaultPin);
+    const isCustomMatch = (customPin && (cleanEntered === customPin || rawEntered === customPin));
 
     if (isMasterMatch || isCustomMatch) {
       if (isMasterMatch) {
-        // If master PIN is entered, clear any mismatched custom PIN from localStorage
         localStorage.removeItem('admin_custom_pin');
       }
       closeAdminAuthModal();
@@ -937,8 +924,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (adminPinError) {
         adminPinError.classList.remove('hidden');
       }
-      adminPinInput.value = '';
-      adminPinInput.focus();
     }
   }
 
@@ -950,6 +935,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (adminPinInput) {
+    adminPinInput.addEventListener('input', () => {
+      if (adminPinError) adminPinError.classList.add('hidden');
+    });
     adminPinInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1058,7 +1046,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const statTotalTokens = document.getElementById('statTotalTokens');
   const statServedTokens = document.getElementById('statServedTokens');
   const statWaitingTokens = document.getElementById('statWaitingTokens');
-  const statTotalFee = document.getElementById('statTotalFee');
   const countFilterAll = document.getElementById('countFilterAll');
   const countFilterWaiting = document.getElementById('countFilterWaiting');
   const countFilterServed = document.getElementById('countFilterServed');
@@ -1227,13 +1214,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalCount = dayRecords.length;
     const servedCount = dayRecords.filter(r => r.status === 'served').length;
     const waitingCount = dayRecords.filter(r => r.status === 'waiting').length;
-    const totalFee = dayRecords.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
 
     // Update KPI UI
     if (statTotalTokens) statTotalTokens.textContent = totalCount;
     if (statServedTokens) statServedTokens.textContent = servedCount;
     if (statWaitingTokens) statWaitingTokens.textContent = waitingCount;
-    if (statTotalFee) statTotalFee.textContent = `Rs. ${totalFee.toLocaleString()}`;
 
     if (countFilterAll) countFilterAll.textContent = totalCount;
     if (countFilterWaiting) countFilterWaiting.textContent = waitingCount;
@@ -1288,9 +1273,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${rec.guardian || '-'}</td>
         <td style="max-width: 140px; font-size: 12px;">${rec.address || '-'}</td>
         <td><span class="reason-tag-sm ${isUrgent ? 'urgent' : ''}">${rec.reason}</span></td>
-        <td>
-          <span style="font-weight: 700; color: #15803d;">Rs. ${Number(rec.amount || 0).toLocaleString()}</span>
-        </td>
         <td>
           <button type="button" class="btn-status-toggle ${rec.status}" data-id="${rec.id}">
             ${rec.status === 'served' ? '✅ اندر آ گیا (Served)' : '⏳ زیرِ انتظار (Waiting)'}
@@ -1390,7 +1372,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalCount = dayRecords.length;
       const servedCount = dayRecords.filter(r => r.status === 'served').length;
       const waitingCount = dayRecords.filter(r => r.status === 'waiting').length;
-      const totalAmount = dayRecords.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
 
       const now = new Date();
       const summaryData = {
@@ -1399,7 +1380,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalCount,
         servedCount,
         waitingCount,
-        totalAmount,
         tokens: dayRecords
       };
 
@@ -1426,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Add UTF-8 BOM so Excel opens Urdu/Arabic properly
       let csv = '\uFEFF';
-      csv += 'Token No,Date,Time,Patient Name,Parentage (S/W/D),Address,Reason,Fee (Rs.),Status\n';
+      csv += 'Token No,Date,Time,Patient Name,Parentage (S/W/D),Address,Reason,Status\n';
 
       dayRecords.forEach(r => {
         const row = [
@@ -1437,7 +1417,6 @@ document.addEventListener('DOMContentLoaded', () => {
           `"${(r.guardian || '').replace(/"/g, '""')}"`,
           `"${(r.address || '').replace(/"/g, '""')}"`,
           `"${(r.reason || '').replace(/"/g, '""')}"`,
-          r.amount || 0,
           `"${r.status === 'served' ? 'Served' : 'Waiting'}"`
         ];
         csv += row.join(',') + '\n';

@@ -514,11 +514,6 @@ class BluetoothPrinter {
     this.appendAscii(bytes, `Total Tokens Issued : ${summary.totalCount}\n`);
     this.appendAscii(bytes, `Served (In Clinic)  : ${summary.servedCount}\n`);
     this.appendAscii(bytes, `Waiting (Pending)   : ${summary.waitingCount}\n`);
-    
-    // Total Fee Collection emphasized
-    bytes.push(0x1B, 0x45, 0x01);
-    this.appendAscii(bytes, `Total Collection    : Rs. ${Number(summary.totalAmount || 0).toLocaleString()}\n`);
-    bytes.push(0x1B, 0x45, 0x00);
     this.appendAscii(bytes, "================================\n");
 
     // Token records breakdown
