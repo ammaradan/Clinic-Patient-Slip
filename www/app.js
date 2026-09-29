@@ -709,7 +709,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!rec || !tokenDetailModal) return;
     currentDetailRecord = rec;
 
-    if (modalTokenNo) modalTokenNo.textContent = `#${rec.tokenNo || '--'}`;
     if (modalPatientName) modalPatientName.textContent = (rec.patientName || 'PATIENT').toUpperCase();
     if (modalDateTime) modalDateTime.textContent = `${rec.date || ''} • ${rec.time || ''}`;
     if (modalGuardian) modalGuardian.textContent = rec.guardian || '-';
@@ -788,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       item.innerHTML = `
         <div class="recent-token-left">
-          <span class="recent-tok-pill">#${rec.tokenNo}</span>
+          <span class="recent-avatar">👤</span>
           <div class="recent-patient-meta">
             <span class="recent-name">${rec.patientName}</span>
             <span class="recent-sub">${guardianText}${addressText}</span>
@@ -1202,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.print();
     }
 
-    showToast(`ٹوکن #${rec.tokenNo} (${rec.patientName}) اصل تاریخ (${rec.date}) اور وقت (${rec.time}) پر پرنٹ ہو گیا!`, 3500);
+    showToast(`پرچی (${rec.patientName}) اصل تاریخ (${rec.date}) اور وقت (${rec.time}) پر پرنٹ ہو گئی!`, 3500);
   }
 
   function renderAdminDashboard() {

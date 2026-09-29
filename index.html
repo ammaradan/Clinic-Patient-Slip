@@ -158,20 +158,20 @@
             <div class="recent-header-left">
               <span class="recent-icon">⏱️</span>
               <div class="recent-title-group">
-                <h3>حالیہ جاری شدہ ٹوکنز</h3>
-                <span class="recent-subtitle">Recent Issued Slips (Last 10)</span>
+                <h3>حالیہ جاری شدہ پرچیاں</h3>
+                <span class="recent-subtitle">Recent Patient Slips (Last 10)</span>
               </div>
             </div>
             <span class="recent-badge-count" id="recentTokensCount">0 / 10</span>
           </div>
 
           <div class="recent-tokens-list" id="recentTokensList">
-            <!-- Dynamically populated up to 10 recent tokens -->
+            <!-- Dynamically populated up to 10 recent slips (no serial/token numbers) -->
           </div>
 
           <div class="recent-empty-state" id="recentEmptyState">
             <span class="empty-clock-icon">🕒</span>
-            <p>آج ابھی تک کوئی ٹوکن جاری نہیں ہوا۔</p>
+            <p>آج ابھی تک کوئی پرچی جاری نہیں ہوئی۔</p>
           </div>
         </div>
 
@@ -610,7 +610,7 @@
       <div class="admin-modal-card token-detail-card">
         <div class="token-detail-header">
           <div class="detail-header-left">
-            <span class="detail-token-badge" id="modalTokenNo">#--</span>
+            <span class="detail-token-badge" id="modalTokenNo">👤</span>
             <div>
               <h3 id="modalPatientName">PATIENT NAME</h3>
               <span class="detail-time-text" id="modalDateTime">28-09-2026 • 12:00 AM</span>
@@ -655,14 +655,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.3.3"></script>
-  <script src="html2canvas.min.js?v=1.3.3"></script>
-  <script src="escpos.js?v=1.3.3"></script>
-  <script src="app.js?v=1.3.3"></script>
+  <script src="graphics.js?v=1.3.4"></script>
+  <script src="html2canvas.min.js?v=1.3.4"></script>
+  <script src="escpos.js?v=1.3.4"></script>
+  <script src="app.js?v=1.3.4"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.3.3').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.3.4').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });
