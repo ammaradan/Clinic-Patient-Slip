@@ -91,6 +91,9 @@ class BluetoothPrinter {
       if (this.syncConnectionState(onStatusChange)) {
         return true;
       }
+      const isExplicit = (localStorage.getItem('bluetooth_explicit_disconnect') === 'true');
+      if (isExplicit) return false;
+
       const lastAddr = localStorage.getItem('last_printer_address');
       const lastName = localStorage.getItem('last_printer_name') || 'Thermal Printer';
       if (lastAddr) {
@@ -110,6 +113,8 @@ class BluetoothPrinter {
       throw new Error('Native Bluetooth interface is not available');
     }
 
+    localStorage.removeItem('bluetooth_explicit_disconnect');
+
     if (this.isConnected && this.deviceName === (name || address)) {
       onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
       return true;
@@ -127,6 +132,7 @@ class BluetoothPrinter {
             this.deviceName = name || res.substring(3) || 'Thermal Printer';
             localStorage.setItem('last_printer_address', address);
             localStorage.setItem('last_printer_name', this.deviceName);
+            localStorage.removeItem('bluetooth_explicit_disconnect');
             onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
             resolve(true);
           } else {

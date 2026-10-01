@@ -205,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btPrinter.isConnected) {
       if (confirm(`Bluetooth پرنٹر (${btPrinter.deviceName || 'Thermal Printer'}) پہلے سے کنیکٹ ہے، کیا ڈسکنیکٹ کرنا چاہتے ہیں؟`)) {
+        localStorage.setItem('bluetooth_explicit_disconnect', 'true');
         btPrinter.disconnect();
         updateBtUI('Disconnected (Tap to Connect)', false);
         showToast('پرنٹر ڈسکنیکٹ کر دیا گیا');
@@ -1583,49 +1584,48 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   // AUTOMATIC BLUETOOTH RECONNECT & STARTUP SYNC
   // ==========================================================================
-  function initBluetoothConnection() {
+  let btMaintainInterval = null;
+  let isMaintainingBt = false;
+
+  async function syncAndMaintainBluetooth() {
+    if (isMaintainingBt) return;
+    const isExplicit = (localStorage.getItem('bluetooth_explicit_disconnect') === 'true');
+    const lastAddr = localStorage.getItem('last_printer_address');
+
     if (btPrinter.isNativeAndroid()) {
-      // 1. Check if already connected in Android bridge (e.g. after page refresh)
-      const isAlreadyConnected = btPrinter.syncConnectionState(updateBtUI);
-      if (isAlreadyConnected) {
-        console.log('Bluetooth session restored from native bridge:', btPrinter.deviceName);
-      } else {
-        // 2. Auto-reconnect to last paired printer unless user tapped Disconnect
-        const lastAddr = localStorage.getItem('last_printer_address');
-        if (lastAddr && localStorage.getItem('bluetooth_explicit_disconnect') !== 'true') {
-          updateBtUI('Auto-connecting...', false);
-          btPrinter.autoConnectLastPrinter(updateBtUI).then(success => {
-            if (success) {
-              showToast(`پرنٹر ${btPrinter.deviceName} خود بخود کنیکٹ ہو گیا!`, 2500);
-            } else {
-              updateBtUI('Disconnected (Tap to Connect)', false);
-            }
-          });
+      const isConnected = btPrinter.syncConnectionState(updateBtUI);
+      // If dropped or not connected, auto-reconnect unless user deliberately tapped Disconnect
+      if (!isConnected && lastAddr && !isExplicit) {
+        isMaintainingBt = true;
+        try {
+          await btPrinter.autoConnectLastPrinter(updateBtUI);
+        } catch (e) {
+          // Silent retry in background
+        } finally {
+          isMaintainingBt = false;
         }
       }
-
-      // 3. Continuously sync connection state every 3 seconds to keep UI accurate
-      setInterval(() => {
-        btPrinter.syncConnectionState(updateBtUI);
-      }, 3000);
     } else if (btPrinter.isWebBluetooth()) {
-      // Chrome Web Bluetooth Auto Reconnect on page reload
-      if (localStorage.getItem('bluetooth_explicit_disconnect') !== 'true') {
-        btPrinter.autoConnectWeb(updateBtUI).then(success => {
-          if (success) {
-            showToast(`پرنٹر ${btPrinter.deviceName} خود بخود کنیکٹ ہو گیا!`, 2500);
-          }
-        });
+      if (!btPrinter.isConnected && !isExplicit) {
+        btPrinter.autoConnectWeb(updateBtUI);
       }
+    }
+  }
+
+  function initBluetoothConnection() {
+    // 1. Immediate sync & connection restoration on load
+    syncAndMaintainBluetooth();
+
+    // 2. Continuous watchdog running every 2.5s (single instance)
+    if (!btMaintainInterval) {
+      btMaintainInterval = setInterval(syncAndMaintainBluetooth, 2500);
     }
   }
 
   // Auto-check connection and sync when browser tab or screen becomes visible again
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      if (!btPrinter.isConnected && localStorage.getItem('bluetooth_explicit_disconnect') !== 'true') {
-        initBluetoothConnection();
-      }
+      syncAndMaintainBluetooth();
       syncAllRecordsWithCloud(false);
     }
   });

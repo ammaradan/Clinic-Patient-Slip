@@ -655,14 +655,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.3.4"></script>
-  <script src="html2canvas.min.js?v=1.3.4"></script>
-  <script src="escpos.js?v=1.3.4"></script>
-  <script src="app.js?v=1.3.4"></script>
+  <script src="graphics.js?v=1.3.5"></script>
+  <script src="html2canvas.min.js?v=1.3.5"></script>
+  <script src="escpos.js?v=1.3.5"></script>
+  <script src="app.js?v=1.3.5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.3.4').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.3.5').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });

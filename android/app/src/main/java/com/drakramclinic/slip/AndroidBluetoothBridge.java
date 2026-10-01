@@ -36,9 +36,12 @@ public class AndroidBluetoothBridge {
     private final Object socketLock = new Object();
     private BluetoothSocket currentSocket = null;
     private OutputStream outputStream = null;
+    private InputStream inputStream = null;
+    private Thread readerThread = null;
     private String connectedDeviceName = null;
     private String connectedDeviceAddress = null;
     private ScheduledExecutorService heartbeatScheduler = null;
+    private volatile boolean isExplicitDisconnect = false;
 
     public static synchronized AndroidBluetoothBridge getInstance(Activity activity) {
         if (instance == null) {
@@ -156,10 +159,14 @@ public class AndroidBluetoothBridge {
             }
         }
 
-        // 2. Disconnect previous connection cleanly and give thermal printer module 400ms to reset
-        disconnect();
+        isExplicitDisconnect = false;
+
+        // 2. Disconnect previous connection cleanly
+        stopHeartbeat();
+        stopReaderThread();
+        disconnectInternal();
         try {
-            Thread.sleep(400);
+            Thread.sleep(250);
         } catch (InterruptedException ignored) {}
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -180,7 +187,9 @@ public class AndroidBluetoothBridge {
         try {
             // Cancel discovery to free up Bluetooth bandwidth
             try {
-                adapter.cancelDiscovery();
+                if (adapter.isDiscovering()) {
+                    adapter.cancelDiscovery();
+                }
             } catch (Exception ignored) {}
 
             BluetoothDevice device = adapter.getRemoteDevice(address);
@@ -192,53 +201,37 @@ public class AndroidBluetoothBridge {
             BluetoothSocket socket = null;
             Exception lastException = null;
 
-            // Strategy 1: Insecure RFCOMM with SPP UUID (Standard for POS thermal receipt printers)
+            // Strategy 1: Standard Secure SPP UUID (Standard for bonded thermal receipt printers)
+            // Using secure SPP first prevents the printer firmware from dropping connection after 2-3 seconds
+            // due to unauthenticated link-key timeout on paired devices!
             try {
-                socket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+                socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
                 socket.connect();
-                Log.i(TAG, "Connected via createInsecureRfcommSocketToServiceRecord");
+                Log.i(TAG, "Connected via createRfcommSocketToServiceRecord (Secure SPP)");
             } catch (Exception e) {
                 lastException = e;
-                Log.w(TAG, "Insecure SPP failed: " + e.getMessage() + ", trying secure SPP...");
+                Log.w(TAG, "Secure SPP failed: " + e.getMessage() + ", trying insecure SPP...");
                 closeQuietly(socket);
                 socket = null;
                 try { Thread.sleep(150); } catch (InterruptedException ignored) {}
             }
 
-            // Strategy 2: Standard Secure SPP UUID
+            // Strategy 2: Insecure SPP UUID
             if (socket == null) {
                 try {
-                    socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+                    socket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
                     socket.connect();
-                    Log.i(TAG, "Connected via createRfcommSocketToServiceRecord");
+                    Log.i(TAG, "Connected via createInsecureRfcommSocketToServiceRecord (Insecure SPP)");
                 } catch (Exception e) {
                     lastException = e;
-                    Log.w(TAG, "Secure SPP failed: " + e.getMessage() + ", trying fallback reflection channel 1...");
+                    Log.w(TAG, "Insecure SPP failed: " + e.getMessage() + ", trying reflection channel 1...");
                     closeQuietly(socket);
                     socket = null;
                     try { Thread.sleep(150); } catch (InterruptedException ignored) {}
                 }
             }
 
-            // Strategy 3: Insecure reflection RFCOMM channel 1
-            if (socket == null) {
-                try {
-                    Method m = device.getClass().getMethod("createInsecureRfcommSocket", new Class[]{int.class});
-                    socket = (BluetoothSocket) m.invoke(device, 1);
-                    if (socket != null) {
-                        socket.connect();
-                        Log.i(TAG, "Connected via reflection createInsecureRfcommSocket(1)");
-                    }
-                } catch (Exception e) {
-                    lastException = e;
-                    Log.w(TAG, "Reflection insecure RFCOMM failed: " + e.getMessage());
-                    closeQuietly(socket);
-                    socket = null;
-                    try { Thread.sleep(150); } catch (InterruptedException ignored) {}
-                }
-            }
-
-            // Strategy 4: Standard reflection RFCOMM channel 1
+            // Strategy 3: Reflection secure RFCOMM channel 1
             if (socket == null) {
                 try {
                     Method m = device.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
@@ -249,7 +242,25 @@ public class AndroidBluetoothBridge {
                     }
                 } catch (Exception e) {
                     lastException = e;
-                    Log.e(TAG, "Reflection RFCOMM failed", e);
+                    Log.w(TAG, "Reflection secure RFCOMM failed: " + e.getMessage() + ", trying insecure reflection...");
+                    closeQuietly(socket);
+                    socket = null;
+                    try { Thread.sleep(150); } catch (InterruptedException ignored) {}
+                }
+            }
+
+            // Strategy 4: Reflection insecure RFCOMM channel 1
+            if (socket == null) {
+                try {
+                    Method m = device.getClass().getMethod("createInsecureRfcommSocket", new Class[]{int.class});
+                    socket = (BluetoothSocket) m.invoke(device, 1);
+                    if (socket != null) {
+                        socket.connect();
+                        Log.i(TAG, "Connected via reflection createInsecureRfcommSocket(1)");
+                    }
+                } catch (Exception e) {
+                    lastException = e;
+                    Log.e(TAG, "All RFCOMM connection strategies failed", e);
                     closeQuietly(socket);
                     socket = null;
                 }
@@ -262,11 +273,16 @@ public class AndroidBluetoothBridge {
             synchronized (socketLock) {
                 this.currentSocket = socket;
                 this.outputStream = socket.getOutputStream();
+                this.inputStream = socket.getInputStream();
                 this.connectedDeviceName = name;
                 this.connectedDeviceAddress = address;
             }
 
-            // Start heartbeat watchdog to keep connection alive
+            // Start active background reader thread to consume printer handshakes/status bytes
+            // This prevents the printer from timing out flow-control credits after 2-3 seconds!
+            startReaderThread(socket, this.inputStream);
+
+            // Start watchdog to monitor connection status
             startHeartbeat();
 
             return "OK:" + name;
@@ -278,6 +294,51 @@ public class AndroidBluetoothBridge {
             Log.e(TAG, "Connection error", e);
             disconnect();
             return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private void startReaderThread(final BluetoothSocket socket, final InputStream in) {
+        stopReaderThread();
+        if (in == null || socket == null) return;
+
+        readerThread = new Thread(() -> {
+            byte[] buf = new byte[256];
+            Log.i(TAG, "Bluetooth reader thread started for flow control & keep-alive");
+            while (!isExplicitDisconnect && socket != null && socket.isConnected()) {
+                try {
+                    int bytesRead = in.read(buf);
+                    if (bytesRead == -1) {
+                        Log.w(TAG, "Bluetooth stream reached EOF (-1)");
+                        handleRemoteDisconnect();
+                        break;
+                    }
+                    Log.d(TAG, "Read " + bytesRead + " bytes from printer (flow control maintained)");
+                } catch (Exception e) {
+                    if (!isExplicitDisconnect) {
+                        Log.w(TAG, "Bluetooth stream read exception: " + e.getMessage());
+                        handleRemoteDisconnect();
+                    }
+                    break;
+                }
+            }
+            Log.i(TAG, "Bluetooth reader thread stopped");
+        }, "BT-ReaderThread");
+        readerThread.setDaemon(true);
+        readerThread.start();
+    }
+
+    private void stopReaderThread() {
+        if (readerThread != null) {
+            try {
+                readerThread.interrupt();
+            } catch (Exception ignored) {}
+            readerThread = null;
+        }
+    }
+
+    private void handleRemoteDisconnect() {
+        synchronized (socketLock) {
+            disconnectInternal();
         }
     }
 
@@ -333,7 +394,9 @@ public class AndroidBluetoothBridge {
 
     @JavascriptInterface
     public void disconnect() {
+        isExplicitDisconnect = true;
         stopHeartbeat();
+        stopReaderThread();
         disconnectInternal();
     }
 
@@ -347,12 +410,19 @@ public class AndroidBluetoothBridge {
             } catch (Exception ignored) {}
 
             try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (Exception ignored) {}
+
+            try {
                 if (currentSocket != null) {
                     currentSocket.close();
                 }
             } catch (Exception ignored) {}
 
             outputStream = null;
+            inputStream = null;
             currentSocket = null;
             connectedDeviceName = null;
             connectedDeviceAddress = null;
@@ -368,10 +438,8 @@ public class AndroidBluetoothBridge {
     }
 
     /**
-     * Periodic Keep-Alive Heartbeat Watchdog.
-     * Thermal printers drop Bluetooth RFCOMM connections if idle for 2-3 minutes.
-     * Sending ESC/POS Real-Time Status Inquiry (0x10, 0x04, 0x01) keeps the Bluetooth link active
-     * without printing anything or advancing paper.
+     * Passive Connection Watchdog.
+     * Monitors connection status without spamming arbitrary commands that could interfere with printer firmware.
      */
     private void startHeartbeat() {
         stopHeartbeat();
@@ -379,21 +447,14 @@ public class AndroidBluetoothBridge {
             heartbeatScheduler = Executors.newSingleThreadScheduledExecutor();
             heartbeatScheduler.scheduleWithFixedDelay(() -> {
                 synchronized (socketLock) {
-                    if (currentSocket != null && currentSocket.isConnected() && outputStream != null) {
-                        try {
-                            // DLE EOT 1 (0x10, 0x04, 0x01): Transmit printer status in real-time
-                            outputStream.write(new byte[]{0x10, 0x04, 0x01});
-                            outputStream.flush();
-                            Log.d(TAG, "Heartbeat keep-alive ping sent");
-                        } catch (Exception e) {
-                            Log.w(TAG, "Heartbeat ping warning: " + e.getMessage());
-                            if (currentSocket == null || !currentSocket.isConnected()) {
-                                disconnectInternal();
-                            }
+                    if (!isExplicitDisconnect && currentSocket != null) {
+                        if (!currentSocket.isConnected()) {
+                            Log.w(TAG, "Heartbeat watchdog detected dropped socket");
+                            disconnectInternal();
                         }
                     }
                 }
-            }, 25, 25, TimeUnit.SECONDS);
+            }, 10, 10, TimeUnit.SECONDS);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start heartbeat scheduler", e);
         }
