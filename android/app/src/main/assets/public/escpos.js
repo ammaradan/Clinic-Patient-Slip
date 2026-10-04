@@ -13,16 +13,27 @@ class BluetoothPrinter {
     this.device = null;
     this.server = null;
     this.characteristic = null;
+    this.notifyCharacteristic = null;
     this.isConnected = false;
+    this.isConnecting = false;
+    this.isPrinting = false;
+    this.reconnectTimer = null;
+    this.webHeartbeatTimer = null;
     this.deviceName = '';
 
     // Standard BLE UUIDs for thermal printers
     this.POS_SERVICES = [
       '000018f0-0000-1000-8000-00805f9b34fb',
-      'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
       '0000ffe0-0000-1000-8000-00805f9b34fb',
-      '0000ff00-0000-1000-8000-00805f9b34fb'
+      '0000ff00-0000-1000-8000-00805f9b34fb',
+      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+      'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+      '0000fee7-0000-1000-8000-00805f9b34fb',
+      '0000ae30-0000-1000-8000-00805f9b34fb',
+      '0000af30-0000-1000-8000-00805f9b34fb',
+      '0000fff0-0000-1000-8000-00805f9b34fb',
+      '0000ff80-0000-1000-8000-00805f9b34fb',
+      '000018f1-0000-1000-8000-00805f9b34fb'
     ];
   }
 
@@ -96,7 +107,7 @@ class BluetoothPrinter {
 
       const lastAddr = localStorage.getItem('last_printer_address');
       const lastName = localStorage.getItem('last_printer_name') || 'Thermal Printer';
-      if (lastAddr) {
+      if (lastAddr && !this.isConnecting) {
         try {
           return await this.connectNative(lastAddr, lastName, onStatusChange);
         } catch (e) {
@@ -120,6 +131,9 @@ class BluetoothPrinter {
       return true;
     }
 
+    if (this.isConnecting) return false;
+    this.isConnecting = true;
+
     onStatusChange && onStatusChange('Connecting to ' + (name || address) + '...', false);
     
     // Connect in async manner to avoid UI freezing
@@ -127,6 +141,7 @@ class BluetoothPrinter {
       setTimeout(() => {
         try {
           const res = window.AndroidBluetooth.connect(address);
+          this.isConnecting = false;
           if (res && res.startsWith('OK:')) {
             this.isConnected = true;
             this.deviceName = name || res.substring(3) || 'Thermal Printer';
@@ -141,6 +156,7 @@ class BluetoothPrinter {
             reject(new Error(res ? res.replace('ERROR: ', '') : 'Connection failed'));
           }
         } catch (e) {
+          this.isConnecting = false;
           this.isConnected = false;
           onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
           reject(e);
@@ -149,8 +165,21 @@ class BluetoothPrinter {
     });
   }
 
+  clearReconnectTimer() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
   async autoConnectWeb(onStatusChange) {
     if (!this.isWebBluetooth() || !navigator.bluetooth.getDevices) {
+      return false;
+    }
+    if (this.isConnected && this.device && this.device.gatt && this.device.gatt.connected) {
+      return true;
+    }
+    if (this.isConnecting) {
       return false;
     }
     if (localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
@@ -179,86 +208,138 @@ class BluetoothPrinter {
   }
 
   async setupWebDevice(device, onStatusChange) {
-    this.device = device;
-    this.deviceName = device.name || '80mm Bluetooth Printer';
-    localStorage.setItem('web_last_device_id', device.id);
-    localStorage.setItem('last_printer_name', this.deviceName);
-    localStorage.removeItem('bluetooth_explicit_disconnect');
+    if (this.isConnecting) return false;
+    this.isConnecting = true;
+    this.clearReconnectTimer();
 
-    const handleDisconnect = async () => {
+    try {
+      this.device = device;
+      this.deviceName = device.name || '80mm Bluetooth Printer';
+      localStorage.setItem('web_last_device_id', device.id);
+      localStorage.setItem('last_printer_name', this.deviceName);
+      localStorage.removeItem('bluetooth_explicit_disconnect');
+
+      // Detach any previous disconnect handler
+      if (this._gattDisconnectHandler && this.device) {
+        try {
+          this.device.removeEventListener('gattserverdisconnected', this._gattDisconnectHandler);
+        } catch (e) {}
+      }
+
+      const handleDisconnect = async () => {
+        console.warn('Web Bluetooth GATT disconnected event received');
+        this.isConnected = false;
+        this.characteristic = null;
+        this.notifyCharacteristic = null;
+        this.stopWebHeartbeat();
+
+        // Only attempt auto-reconnect if the user didn't explicitly tap Disconnect
+        if (localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
+          onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+          return;
+        }
+
+        onStatusChange && onStatusChange(`Reconnecting to ${this.deviceName}...`, false);
+        this.scheduleAutoReconnect(onStatusChange);
+      };
+
+      this._gattDisconnectHandler = handleDisconnect;
+      this.device.addEventListener('gattserverdisconnected', this._gattDisconnectHandler);
+
+      // Connect GATT if not already connected
+      if (!this.device.gatt || !this.device.gatt.connected) {
+        this.server = await this.device.gatt.connect();
+      } else {
+        this.server = this.device.gatt;
+      }
+
+      await this.discoverGattCharacteristics();
+
+      this.isConnected = true;
+      this.isConnecting = false;
+      this.startWebHeartbeat();
+      onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+      return true;
+    } catch (err) {
       this.isConnected = false;
-      this.characteristic = null;
+      this.isConnecting = false;
       this.stopWebHeartbeat();
+      throw err;
+    }
+  }
 
-      // Only attempt auto-reconnect if the user didn't explicitly tap Disconnect
-      if (localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
-        onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+  scheduleAutoReconnect(onStatusChange) {
+    this.clearReconnectTimer();
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const retryConnect = async () => {
+      if (this.isConnected || localStorage.getItem('bluetooth_explicit_disconnect') === 'true') {
+        this.clearReconnectTimer();
+        return;
+      }
+      if (this.isConnecting) {
+        this.reconnectTimer = setTimeout(retryConnect, 2000);
         return;
       }
 
-      onStatusChange && onStatusChange(`Reconnecting to ${this.deviceName}...`, false);
-      
-      // Auto-reconnect with retries
-      let attempts = 0;
-      const retryConnect = async () => {
-        if (this.isConnected || localStorage.getItem('bluetooth_explicit_disconnect') === 'true') return;
-        attempts++;
-        try {
-          if (this.device && this.device.gatt) {
-            await this.device.gatt.connect();
-            await this.discoverGattCharacteristics();
-            this.isConnected = true;
-            this.startWebHeartbeat();
-            onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
-            console.log('Bluetooth auto-reconnected successfully!');
-            return;
-          }
-        } catch (reErr) {
-          if (attempts < 6) {
-            setTimeout(retryConnect, attempts * 2000);
-          } else {
-            onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
-          }
-        }
-      };
+      attempts++;
+      this.isConnecting = true;
 
-      setTimeout(retryConnect, 1500);
+      try {
+        if (this.device && this.device.gatt) {
+          if (!this.device.gatt.connected) {
+            this.server = await this.device.gatt.connect();
+          } else {
+            this.server = this.device.gatt;
+          }
+          await this.discoverGattCharacteristics();
+          this.isConnected = true;
+          this.isConnecting = false;
+          this.clearReconnectTimer();
+          this.startWebHeartbeat();
+          onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
+          console.log(`Bluetooth auto-reconnected successfully on attempt ${attempts}!`);
+          return;
+        }
+      } catch (reErr) {
+        console.warn(`Bluetooth auto-reconnect attempt ${attempts} failed:`, reErr);
+        this.isConnected = false;
+        this.isConnecting = false;
+
+        if (attempts < maxAttempts && localStorage.getItem('bluetooth_explicit_disconnect') !== 'true') {
+          const delay = Math.min(2000 + attempts * 1000, 8000);
+          onStatusChange && onStatusChange(`Reconnecting to ${this.deviceName}... (${attempts})`, false);
+          this.reconnectTimer = setTimeout(retryConnect, delay);
+        } else {
+          onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
+        }
+      }
     };
 
-    // Remove any previous listener before re-attaching
-    this.device.removeEventListener('gattserverdisconnected', this._gattDisconnectHandler);
-    this._gattDisconnectHandler = handleDisconnect;
-    this.device.addEventListener('gattserverdisconnected', this._gattDisconnectHandler);
-
-    this.server = await this.device.gatt.connect();
-    await this.discoverGattCharacteristics();
-
-    this.isConnected = true;
-    this.startWebHeartbeat();
-    onStatusChange && onStatusChange(`Connected: ${this.deviceName}`, true);
-    return true;
+    // First retry delay: wait 2000ms to allow OS Bluetooth stack to cleanly recycle GATT handle
+    this.reconnectTimer = setTimeout(retryConnect, 2000);
   }
 
   async discoverGattCharacteristics() {
     this.characteristic = null;
+    this.notifyCharacteristic = null;
     if (!this.server) return;
 
-    // Find write characteristic (prefer writeWithoutResponse for high speed)
+    // Search standard thermal printer primary services
     for (const serviceUuid of this.POS_SERVICES) {
       try {
         const service = await this.server.getPrimaryService(serviceUuid);
         const chars = await service.getCharacteristics();
         for (const char of chars) {
-          if (char.properties.writeWithoutResponse) {
-            this.characteristic = char;
-            break;
-          }
-        }
-        if (!this.characteristic) {
-          for (const char of chars) {
-            if (char.properties.write) {
+          if (!this.characteristic) {
+            if (char.properties.writeWithoutResponse || char.properties.write) {
               this.characteristic = char;
-              break;
+            }
+          }
+          if (!this.notifyCharacteristic) {
+            if (char.properties.notify || char.properties.indicate) {
+              this.notifyCharacteristic = char;
             }
           }
         }
@@ -273,16 +354,14 @@ class BluetoothPrinter {
           try {
             const chars = await service.getCharacteristics();
             for (const char of chars) {
-              if (char.properties.writeWithoutResponse) {
-                this.characteristic = char;
-                break;
-              }
-            }
-            if (!this.characteristic) {
-              for (const char of chars) {
-                if (char.properties.write) {
+              if (!this.characteristic) {
+                if (char.properties.writeWithoutResponse || char.properties.write) {
                   this.characteristic = char;
-                  break;
+                }
+              }
+              if (!this.notifyCharacteristic) {
+                if (char.properties.notify || char.properties.indicate) {
+                  this.notifyCharacteristic = char;
                 }
               }
             }
@@ -295,12 +374,27 @@ class BluetoothPrinter {
     if (!this.characteristic) {
       throw new Error('Printer connected, but writable print channel was not found.');
     }
+
+    // Subscribe to notification channel if present to maintain active GATT subscription
+    if (this.notifyCharacteristic) {
+      try {
+        await this.notifyCharacteristic.startNotifications();
+        this.notifyCharacteristic.addEventListener('characteristicvaluechanged', (e) => {
+          // Status activity from printer keeps link verified
+        });
+      } catch (e) {
+        console.warn('Could not start notifications on characteristic:', e);
+      }
+    }
   }
 
   async connectWeb(onStatusChange) {
     if (!this.isWebBluetooth()) {
       throw new Error('Web Bluetooth is not supported in this browser. Please open in Google Chrome on Android or PC.');
     }
+
+    this.clearReconnectTimer();
+    localStorage.removeItem('bluetooth_explicit_disconnect');
 
     try {
       onStatusChange && onStatusChange('Connecting...', false);
@@ -313,6 +407,7 @@ class BluetoothPrinter {
       return await this.setupWebDevice(device, onStatusChange);
     } catch (err) {
       this.isConnected = false;
+      this.isConnecting = false;
       this.stopWebHeartbeat();
       onStatusChange && onStatusChange('Disconnected (Tap to Connect)', false);
       throw err;
@@ -321,17 +416,40 @@ class BluetoothPrinter {
 
   startWebHeartbeat() {
     this.stopWebHeartbeat();
+    // Active Keep-Alive every 5 seconds to prevent BLE peripheral idle power-saving timeout
     this.webHeartbeatTimer = setInterval(async () => {
-      if (this.isConnected && this.device && this.device.gatt) {
-        if (!this.device.gatt.connected) {
-          console.warn('GATT disconnected detected in heartbeat check');
-          this.isConnected = false;
-          if (this._gattDisconnectHandler) {
-            this._gattDisconnectHandler();
+      if (!this.isConnected || !this.device || !this.device.gatt) return;
+
+      if (!this.device.gatt.connected) {
+        console.warn('GATT disconnected detected in heartbeat check');
+        this.isConnected = false;
+        if (this._gattDisconnectHandler) {
+          this._gattDisconnectHandler();
+        }
+        return;
+      }
+
+      // Active Keep-Alive ping: send real-time ESC/POS status inquiry DLE EOT 1 [0x10, 0x04, 0x01]
+      // Prints nothing, advances 0 lines, but keeps the BLE RF connection active!
+      if (this.characteristic && !this.isPrinting) {
+        try {
+          const pingBytes = new Uint8Array([0x10, 0x04, 0x01]);
+          if (this.characteristic.properties.writeWithoutResponse) {
+            await this.characteristic.writeValueWithoutResponse(pingBytes);
+          } else if (this.characteristic.properties.write) {
+            await this.characteristic.writeValue(pingBytes);
+          }
+        } catch (pingErr) {
+          console.warn('Heartbeat ping failed:', pingErr);
+          if (this.device.gatt && !this.device.gatt.connected) {
+            this.isConnected = false;
+            if (this._gattDisconnectHandler) {
+              this._gattDisconnectHandler();
+            }
           }
         }
       }
-    }, 15000);
+    }, 5000);
   }
 
   stopWebHeartbeat() {
@@ -343,6 +461,7 @@ class BluetoothPrinter {
 
   disconnect() {
     localStorage.setItem('bluetooth_explicit_disconnect', 'true');
+    this.clearReconnectTimer();
     this.stopWebHeartbeat();
     if (this.isNativeAndroid()) {
       window.AndroidBluetooth.disconnect();
@@ -352,7 +471,9 @@ class BluetoothPrinter {
       } catch (e) {}
     }
     this.isConnected = false;
+    this.isConnecting = false;
     this.characteristic = null;
+    this.notifyCharacteristic = null;
     this.deviceName = '';
   }
 
@@ -380,22 +501,37 @@ class BluetoothPrinter {
       throw new Error('پرنٹر کا پرنٹنگ چینل دستیاب نہیں ہے۔');
     }
 
-    // High speed streaming: 200-byte chunks with 4ms pacing for writeWithoutResponse
-    const isNoResponse = !!(this.characteristic.properties.writeWithoutResponse);
-    const CHUNK_SIZE = isNoResponse ? 200 : 80;
-    const DELAY_MS = isNoResponse ? 4 : 15;
+    this.isPrinting = true;
+    try {
+      // Safe, high-speed streaming: 64-byte chunks with 12ms pacing
+      // Universally compatible with all BLE MTU profiles and prevents thermal buffer overflows
+      const isNoResponse = !!(this.characteristic.properties.writeWithoutResponse);
+      const CHUNK_SIZE = 64;
+      const DELAY_MS = isNoResponse ? 12 : 15;
 
-    for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
-      const chunk = byteArray.slice(i, i + CHUNK_SIZE);
-      const buffer = new Uint8Array(chunk);
-      if (isNoResponse) {
-        await this.characteristic.writeValueWithoutResponse(buffer);
-      } else {
-        await this.characteristic.writeValue(buffer);
+      for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
+        const chunk = byteArray.slice(i, i + CHUNK_SIZE);
+        const buffer = new Uint8Array(chunk);
+        if (isNoResponse) {
+          await this.characteristic.writeValueWithoutResponse(buffer);
+        } else {
+          await this.characteristic.writeValue(buffer);
+        }
+        await new Promise(r => setTimeout(r, DELAY_MS));
       }
-      await new Promise(r => setTimeout(r, DELAY_MS));
+      return true;
+    } catch (err) {
+      console.error('Error sending raw data to printer:', err);
+      if (this.device && this.device.gatt && !this.device.gatt.connected) {
+        this.isConnected = false;
+        if (this._gattDisconnectHandler) {
+          this._gattDisconnectHandler();
+        }
+      }
+      throw err;
+    } finally {
+      this.isPrinting = false;
     }
-    return true;
   }
 
   base64ToUint8(base64) {

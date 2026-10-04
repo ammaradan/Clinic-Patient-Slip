@@ -1588,14 +1588,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let isMaintainingBt = false;
 
   async function syncAndMaintainBluetooth() {
-    if (isMaintainingBt) return;
+    if (isMaintainingBt || btPrinter.isConnecting) return;
     const isExplicit = (localStorage.getItem('bluetooth_explicit_disconnect') === 'true');
-    const lastAddr = localStorage.getItem('last_printer_address');
+    if (isExplicit) return;
 
     if (btPrinter.isNativeAndroid()) {
       const isConnected = btPrinter.syncConnectionState(updateBtUI);
+      const lastAddr = localStorage.getItem('last_printer_address');
       // If dropped or not connected, auto-reconnect unless user deliberately tapped Disconnect
-      if (!isConnected && lastAddr && !isExplicit) {
+      if (!isConnected && lastAddr && !btPrinter.isConnecting) {
         isMaintainingBt = true;
         try {
           await btPrinter.autoConnectLastPrinter(updateBtUI);
@@ -1606,8 +1607,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     } else if (btPrinter.isWebBluetooth()) {
-      if (!btPrinter.isConnected && !isExplicit) {
-        btPrinter.autoConnectWeb(updateBtUI);
+      // If Web Bluetooth is not connected, not currently connecting, and no auto-reconnect timer active
+      if (!btPrinter.isConnected && !btPrinter.isConnecting && !btPrinter.reconnectTimer) {
+        isMaintainingBt = true;
+        try {
+          await btPrinter.autoConnectWeb(updateBtUI);
+        } catch (e) {
+          // Silent retry
+        } finally {
+          isMaintainingBt = false;
+        }
       }
     }
   }
@@ -1616,9 +1625,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Immediate sync & connection restoration on load
     syncAndMaintainBluetooth();
 
-    // 2. Continuous watchdog running every 2.5s (single instance)
+    // 2. Gentle watchdog running every 15s (prevents reconnect collisions / spam)
     if (!btMaintainInterval) {
-      btMaintainInterval = setInterval(syncAndMaintainBluetooth, 2500);
+      btMaintainInterval = setInterval(syncAndMaintainBluetooth, 15000);
     }
   }
 

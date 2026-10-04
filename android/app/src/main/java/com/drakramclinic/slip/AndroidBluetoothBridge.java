@@ -308,16 +308,12 @@ public class AndroidBluetoothBridge {
                 try {
                     int bytesRead = in.read(buf);
                     if (bytesRead == -1) {
-                        Log.w(TAG, "Bluetooth stream reached EOF (-1)");
-                        handleRemoteDisconnect();
+                        Log.d(TAG, "Bluetooth stream reached EOF - maintaining connection for printing");
                         break;
                     }
                     Log.d(TAG, "Read " + bytesRead + " bytes from printer (flow control maintained)");
                 } catch (Exception e) {
-                    if (!isExplicitDisconnect) {
-                        Log.w(TAG, "Bluetooth stream read exception: " + e.getMessage());
-                        handleRemoteDisconnect();
-                    }
+                    Log.d(TAG, "Bluetooth stream read notice: " + e.getMessage());
                     break;
                 }
             }
