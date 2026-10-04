@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- DOM Elements ---
   const patientNameInput = document.getElementById('patientName');
   const guardianNameInput = document.getElementById('guardianName');
+  const patientAgeInput = document.getElementById('patientAge');
   const patientAddressInput = document.getElementById('patientAddress');
   const consultationReasonInput = document.getElementById('consultationReason');
   const btnPrintSlip = document.getElementById('btnPrintSlip');
@@ -22,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Preview elements
   const slipPatientName = document.getElementById('slipPatientName');
   const slipGuardian = document.getElementById('slipGuardian');
+  const slipAge = document.getElementById('slipAge');
+  const slipAgeDisplay = document.getElementById('slipAgeDisplay');
   const slipAddress = document.getElementById('slipAddress');
   const slipDate = document.getElementById('slipDate');
   const slipTime = document.getElementById('slipTime');
@@ -53,6 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const guardianVal = guardianNameInput.value.trim();
     slipGuardian.textContent = guardianVal || 'Ashraf';
+
+    const ageVal = patientAgeInput ? patientAgeInput.value.trim() : '';
+    if (slipAgeDisplay && slipAge) {
+      if (ageVal) {
+        slipAgeDisplay.style.display = 'inline';
+        slipAge.textContent = ageVal;
+      } else {
+        slipAgeDisplay.style.display = 'none';
+      }
+    }
 
     const addrVal = patientAddressInput.value.trim();
     slipAddress.textContent = addrVal || 'Tandla';
@@ -92,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  [patientNameInput, guardianNameInput, patientAddressInput, consultationReasonInput].forEach(inp => {
+  [patientNameInput, guardianNameInput, patientAgeInput, patientAddressInput, consultationReasonInput].forEach(inp => {
     inp.addEventListener('input', syncLivePreview);
   });
 
@@ -100,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnClearForm.addEventListener('click', () => {
     patientNameInput.value = '';
     guardianNameInput.value = '';
+    if (patientAgeInput) patientAgeInput.value = '';
     patientAddressInput.value = '';
     consultationReasonInput.value = 'General Checkup';
     tagButtons.forEach(b => b.classList.toggle('active', b.getAttribute('data-val') === 'General Checkup'));
@@ -531,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
       time: patientData.time || slipTime.textContent.trim(),
       patientName: patientData.name.toUpperCase(),
       guardian: patientData.guardian,
+      age: patientData.age || '',
       address: patientData.address,
       reason: patientData.reason || 'General Checkup',
       amount: defaultAmount,
@@ -559,15 +574,25 @@ document.addEventListener('DOMContentLoaded', () => {
   async function handlePrint(isReprint = false) {
     let name = patientNameInput.value.trim().toUpperCase();
     let guardian = guardianNameInput.value.trim();
+    let age = patientAgeInput ? patientAgeInput.value.trim() : '';
     let address = patientAddressInput.value.trim();
     const reason = consultationReasonInput.value.trim() || 'General Checkup';
 
     if (isReprint && lastPrintedData) {
       name = lastPrintedData.name;
       guardian = lastPrintedData.guardian;
+      age = lastPrintedData.age || '';
       address = lastPrintedData.address;
       slipPatientName.textContent = name.toUpperCase();
       slipGuardian.textContent = guardian;
+      if (slipAgeDisplay && slipAge) {
+        if (age) {
+          slipAgeDisplay.style.display = 'inline';
+          slipAge.textContent = age;
+        } else {
+          slipAgeDisplay.style.display = 'none';
+        }
+      }
       slipAddress.textContent = address;
       slipConsultation.textContent = lastPrintedData.reason;
     } else {
@@ -595,6 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lastPrintedData = {
         name,
         guardian,
+        age,
         address,
         reason
       };
@@ -605,6 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
       addTokenRecord({
         name,
         guardian,
+        age,
         address,
         reason,
         date: dateStr,
@@ -627,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const patientData = {
         name,
         guardian,
+        age,
         address,
         reason,
         date: dateStr,
@@ -700,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalPatientName = document.getElementById('modalPatientName');
   const modalDateTime = document.getElementById('modalDateTime');
   const modalGuardian = document.getElementById('modalGuardian');
+  const modalAge = document.getElementById('modalAge');
   const modalAddress = document.getElementById('modalAddress');
   const modalReason = document.getElementById('modalReason');
   const modalStatus = document.getElementById('modalStatus');
@@ -713,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalPatientName) modalPatientName.textContent = (rec.patientName || 'PATIENT').toUpperCase();
     if (modalDateTime) modalDateTime.textContent = `${rec.date || ''} • ${rec.time || ''}`;
     if (modalGuardian) modalGuardian.textContent = rec.guardian || '-';
+    if (modalAge) modalAge.textContent = rec.age ? `${rec.age} Years` : '-';
     if (modalAddress) modalAddress.textContent = rec.address || '-';
     if (modalReason) modalReason.textContent = rec.reason || 'General Checkup';
     if (modalStatus) {
@@ -783,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
       item.setAttribute('data-id', rec.id);
 
       const isUrgent = (rec.reason || '').toLowerCase().includes('urgent');
-      const guardianText = rec.guardian ? `${rec.guardian} • ` : '';
+      const guardianText = rec.guardian ? `${rec.guardian}${rec.age ? ` (${rec.age}Y)` : ''} • ` : (rec.age ? `${rec.age}Y • ` : '');
       const addressText = rec.address || '-';
 
       item.innerHTML = `
@@ -1160,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const patientData = {
       name: (rec.patientName || '').toUpperCase(),
       guardian: rec.guardian || '',
+      age: rec.age || '',
       address: rec.address || '',
       reason: rec.reason || 'General Checkup',
       date: rec.date, // STRICTLY PRESERVE ORIGINAL RECORDED DATE
@@ -1180,7 +1211,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           slipPatientName.textContent = patientData.name;
           slipGuardian.textContent = patientData.guardian;
-          slipAddress.textContent = patientData.address;
+    if (slipAgeDisplay && slipAge) {
+      if (patientData.age) {
+        slipAgeDisplay.style.display = 'inline';
+        slipAge.textContent = patientData.age;
+      } else {
+        slipAgeDisplay.style.display = 'none';
+      }
+    }
+    slipAddress.textContent = patientData.address;
           slipConsultation.textContent = patientData.reason;
           slipDate.textContent = patientData.date;
           slipTime.textContent = patientData.time;
@@ -1195,7 +1234,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!printedViaBluetooth) {
       slipPatientName.textContent = patientData.name;
       slipGuardian.textContent = patientData.guardian;
-      slipAddress.textContent = patientData.address;
+    if (slipAgeDisplay && slipAge) {
+      if (patientData.age) {
+        slipAgeDisplay.style.display = 'inline';
+        slipAge.textContent = patientData.age;
+      } else {
+        slipAgeDisplay.style.display = 'none';
+      }
+    }
+    slipAddress.textContent = patientData.address;
       slipConsultation.textContent = patientData.reason;
       slipDate.textContent = patientData.date;
       slipTime.textContent = patientData.time;
@@ -1270,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><span class="tok-badge">#${rec.tokenNo}</span></td>
         <td style="white-space: nowrap; font-size: 12px; color: #64748b;">${rec.time}</td>
         <td><strong class="patient-cell-name">${rec.patientName}</strong></td>
-        <td>${rec.guardian || '-'}</td>
+        <td>${rec.guardian || '-'}${rec.age ? ` (${rec.age}Y)` : ''}</td>
         <td style="max-width: 140px; font-size: 12px;">${rec.address || '-'}</td>
         <td><span class="reason-tag-sm ${isUrgent ? 'urgent' : ''}">${rec.reason}</span></td>
         <td>

@@ -583,9 +583,17 @@ class BluetoothPrinter {
     this.appendAscii(bytes, `${(patientData.name || '').toUpperCase()}\n`);
     bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00, 0x1B, 0x47, 0x00);
 
-    // Parentage
-    if (patientData.guardian) {
-      this.appendAscii(bytes, `S/W/D: ${patientData.guardian}\n`);
+    // Parentage & Age on the same line
+    let parentageLine = '';
+    if (patientData.guardian && patientData.age) {
+      parentageLine = `S/W/D: ${patientData.guardian}   Age: ${patientData.age}\n`;
+    } else if (patientData.guardian) {
+      parentageLine = `S/W/D: ${patientData.guardian}\n`;
+    } else if (patientData.age) {
+      parentageLine = `Age: ${patientData.age}\n`;
+    }
+    if (parentageLine) {
+      this.appendAscii(bytes, parentageLine);
     }
 
     // Address
@@ -822,6 +830,7 @@ class BluetoothPrinter {
 
     const patientName = document.getElementById('slipPatientName')?.innerText || 'PATIENT';
     const guardian = document.getElementById('slipGuardian')?.innerText || '';
+    const age = document.getElementById('slipAge')?.innerText || '';
     const address = document.getElementById('slipAddress')?.innerText || '';
     const dateStr = document.getElementById('slipDate')?.innerText || '';
     const timeStr = document.getElementById('slipTime')?.innerText || '';
@@ -831,7 +840,13 @@ class BluetoothPrinter {
     this.appendAscii(bytes, `${patientName}\n`);
     bytes.push(0x1D, 0x21, 0x00, 0x1B, 0x45, 0x00);
 
-    if (guardian) this.appendAscii(bytes, `S/W/D: ${guardian}\n`);
+    if (guardian && age) {
+      this.appendAscii(bytes, `S/W/D: ${guardian}   Age: ${age}\n`);
+    } else if (guardian) {
+      this.appendAscii(bytes, `S/W/D: ${guardian}\n`);
+    } else if (age) {
+      this.appendAscii(bytes, `Age: ${age}\n`);
+    }
     if (address) this.appendAscii(bytes, `Address: ${address}\n`);
     this.appendAscii(bytes, `${dateStr.replace('📅', '')}  ${timeStr.replace('🕒', '')}\n`);
     this.appendAscii(bytes, "--------------------------------\n");

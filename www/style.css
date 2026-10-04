@@ -301,6 +301,26 @@ body {
   border: none;
 }
 
+.input-prefix.input-prefix-age {
+  border-right: none;
+  border-left: 1.5px solid #cbd5e1;
+  padding: 0 10px;
+}
+
+.form-input.guardian-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-input.age-field {
+  width: 72px;
+  min-width: 60px;
+  max-width: 80px;
+  flex-shrink: 0;
+  padding: 12px 6px;
+  text-align: center;
+}
+
 /* Quick tags */
 .quick-tags {
   display: flex;

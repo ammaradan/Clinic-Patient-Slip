@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=1.4.0">
+  <link rel="stylesheet" href="style.css?v=1.4.1">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <meta name="theme-color" content="#072a24">
@@ -75,11 +75,11 @@
               >
             </div>
 
-            <!-- Field 2: Parentage (Mandatory: S/W/D default) -->
+            <!-- Field 2: Parentage (Mandatory: S/W/D default) & Age -->
             <div class="form-group">
               <label for="guardianName" class="form-label">
-                <span>Parentage (S/W/D)</span>
-                <span class="urdu-label">ولدیت / نسبت (S/W/D)</span>
+                <span>Parentage (S/W/D) & Age</span>
+                <span class="urdu-label">ولدیت و عمر</span>
                 <span class="required">*</span>
               </label>
               <div class="prefix-input-wrapper">
@@ -88,10 +88,20 @@
                   type="text" 
                   id="guardianName" 
                   name="guardianName"
-                  class="form-input prefixed" 
+                  class="form-input prefixed guardian-field" 
                   placeholder="Father / Husband Name" 
                   required 
                   autocomplete="off"
+                >
+                <span class="input-prefix input-prefix-age">Age:</span>
+                <input 
+                  type="text" 
+                  id="patientAge" 
+                  name="patientAge"
+                  class="form-input prefixed age-field" 
+                  placeholder="Age" 
+                  autocomplete="off"
+                  inputmode="numeric"
                 >
               </div>
             </div>
@@ -195,7 +205,7 @@
             <div id="slipPatientName" class="receipt-patient-name">ADANN</div>
             
             <div id="slipParentageRow" class="receipt-patient-field">
-              <span class="field-label">S/W/D:</span> <span id="slipGuardian">Ashraf</span>
+              <span class="field-label">S/W/D:</span> <span id="slipGuardian">Ashraf</span><span id="slipAgeDisplay" style="margin-left: 10px; display: none;"><span class="field-label">Age:</span> <span id="slipAge">25</span></span>
             </div>
 
             <div id="slipAddressRow" class="receipt-patient-field">
@@ -624,6 +634,10 @@
             <span class="detail-lbl">ولدیت / نسبت (S/W/D):</span>
             <strong class="detail-val" id="modalGuardian">-</strong>
           </div>
+          <div class="detail-info-row" id="modalAgeRow">
+            <span class="detail-lbl">عمر (Age):</span>
+            <strong class="detail-val" id="modalAge">-</strong>
+          </div>
           <div class="detail-info-row">
             <span class="detail-lbl">پتہ / رہائش (Address):</span>
             <strong class="detail-val" id="modalAddress">-</strong>
@@ -655,14 +669,14 @@
   </div>
 
   <!-- Scripts with cache busting query string -->
-  <script src="graphics.js?v=1.4.0"></script>
-  <script src="html2canvas.min.js?v=1.4.0"></script>
-  <script src="escpos.js?v=1.4.0"></script>
-  <script src="app.js?v=1.4.0"></script>
+  <script src="graphics.js?v=1.4.1"></script>
+  <script src="html2canvas.min.js?v=1.4.1"></script>
+  <script src="escpos.js?v=1.4.1"></script>
+  <script src="app.js?v=1.4.1"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=1.4.0').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=1.4.1').then(reg => {
           reg.update();
         }).catch(err => console.log('SW error:', err));
       });
